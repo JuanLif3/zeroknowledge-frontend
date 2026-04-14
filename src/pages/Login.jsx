@@ -17,6 +17,7 @@ const Login = () => {
             // SI funciona, java nos dio el JWT y ya esta en localStorage
             // Redirigimos a la boveda 
             alert('Login exitoso! Redirigiendo a la bóveda...');
+            navigate('/vault');
         } catch (err) {
             setError('Credenciales inválidas. Intenta de nuevo.');
         }

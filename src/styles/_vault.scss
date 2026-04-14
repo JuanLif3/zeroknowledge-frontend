@@ -1,0 +1,136 @@
+.vault-container {
+  min-height: 100vh;
+  background-color: $primary-color;
+  padding: 2rem;
+
+  .vault-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+
+    h2 { color: $accent-color; margin: 0; }
+    
+    .logout-btn {
+      background: transparent;
+      color: #ef4444;
+      border: 1px solid #ef4444;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      &:hover { background: #ef4444; color: white; }
+    }
+  }
+
+  .unlock-overlay {
+    display: flex;
+    justify-content: center;
+    margin-top: 10vh;
+
+    .unlock-box {
+      background-color: #1e293b;
+      padding: 2rem;
+      border-radius: 8px;
+      border: 1px solid $accent-color;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+
+      input {
+        padding: 0.75rem;
+        background: #0f172a;
+        border: 1px solid #475569;
+        color: white;
+        border-radius: 4px;
+      }
+      button {
+        padding: 0.75rem;
+        background-color: $accent-color;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
+      }
+    }
+  }
+
+  .vault-content {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 2rem;
+
+    @media (max-width: 768px) { grid-template-columns: 1fr; }
+
+    .add-item-card {
+      background-color: #1e293b;
+      padding: 1.5rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+
+        input[type="text"], input[type="password"] {
+          padding: 0.75rem;
+          background: #0f172a;
+          border: 1px solid #475569;
+          color: white;
+        }
+
+        .honeytoken-label {
+          color: #f59e0b;
+          font-size: 0.9rem;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        button {
+          background-color: $accent-color;
+          padding: 0.75rem;
+          border: none;
+          font-weight: bold;
+          cursor: pointer;
+        }
+      }
+    }
+
+    .items-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+
+      .vault-item {
+        background-color: #1e293b;
+        padding: 1.5rem;
+        border-radius: 8px;
+        border: 1px solid #334155;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+
+        &.honeytoken {
+          border-color: #f59e0b;
+          box-shadow: inset 0 0 10px rgba(245, 158, 11, 0.1);
+        }
+
+        .item-details h4 { margin: 0 0 0.5rem 0; color: white; }
+        .item-details p { margin: 0.2rem 0; color: #94a3b8; font-size: 0.9rem; }
+
+        .badge {
+          background-color: #f59e0b;
+          color: #000;
+          font-size: 0.7rem;
+          font-weight: bold;
+          padding: 0.3rem 0.6rem;
+          border-radius: 20px;
+        }
+      }
+    }
+  }
+}
