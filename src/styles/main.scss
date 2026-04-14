@@ -1,13 +1,28 @@
-$primary-color: #0f172a; // Azul oscuro hacker
-$accent-color: #10b981;  // Verde matrix
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400&display=swap');
+
+// Paleta Monocromática Expandida
+$bg-color: #000000;       // Negro puro
+$surface: #050505;        // Negro elevado
+$border-color: #1a1a1a;   // Líneas muy sutiles
+$text-main: #ffffff;      // Blanco puro
+$text-muted: #888888;     // Gris medio para detalles
+$accent: #ffffff;         // Contraste máximo
 
 body {
-  background-color: $primary-color;
-  color: white;
-  font-family: 'Courier New', Courier, monospace; // Estilo terminal
-  margin: 0;
-  padding: 0;
+  background-color: $bg-color;
+  // --- DETALLE UNICO: PATRÓN DE FONDO ---
+  // Un patrón de puntos sutil para rellenar el "vacio" de fondo
+  background-image: radial-gradient(#111 1px, transparent 1px);
+  background-size: 20px 20px;
+  color: $text-main;
+  font-family: 'Inter', sans-serif;
+  margin: 0; padding: 0;
+  -webkit-font-smoothing: antialiased;
 }
+
+// Reseteo Afilado
+button, input, select { font-family: inherit; border-radius: 0; box-sizing: border-box; }
+.mono-font { font-family: 'JetBrains Mono', monospace; }
 
 @import 'auth';
 @import 'vault';

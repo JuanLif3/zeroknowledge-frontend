@@ -1,101 +1,114 @@
-.auth-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background-color: $primary-color;
+.dashboard-layout {
+  display: flex; min-height: 100vh;
+  background-image: radial-gradient(#111 1px, transparent 1px); background-size: 20px 20px;
 
-  .auth-box {
-    background-color: #1e293b;
-    padding: 3rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 0 15px rgba(16, 185, 129, 0.2);
-    width: 100%;
-    max-width: 400px;
-    border: 1px solid #334155;
+  // --- OVERLAY DE DESBLOQUEO ---
+  .unlock-overlay {
+    width: 100%; display: flex; justify-content: center; align-items: center;
+    .unlock-box {
+      width: 440px; padding: 4rem; border: 1px solid $border-color; text-align: center; background: $surface; position: relative;
+      &::after { content: ''; position: absolute; top: 10px; left: 10px; right: 10px; bottom: 10px; border: 1px solid #111; pointer-events: none; }
+      h2 { font-weight: 300; letter-spacing: 5px; border-bottom: 1px solid $border-color; padding-bottom: 1rem; text-transform: uppercase; }
+      p { color: $text-muted; font-size: 0.85rem; margin-bottom: 2.5rem; text-transform: uppercase; letter-spacing: 1px; }
+      input { width: 100%; padding: 1.2rem; background: transparent; border: 1px solid $border-color; color: white; text-align: center; margin-bottom: 1.5rem; &:focus { outline: none; border-color: white; } }
+      button { width: 100%; padding: 1.2rem; background: white; color: black; border: 1px solid white; cursor: pointer; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; &:hover { background: black; color: white; } }
+    }
+  }
 
-    h2 {
-      text-align: center;
-      color: $accent-color;
-      margin-bottom: 2rem;
-      text-transform: uppercase;
-      letter-spacing: 2px;
+  // --- SIDEBAR ---
+  .sidebar {
+    width: 280px; border-right: 1px solid $border-color; display: flex; flex-direction: column; padding: 3rem 2rem; background: $surface;
+
+    .brand {
+      margin-bottom: 5rem;
+      h2 { font-weight: 300; letter-spacing: 4px; margin: 0 0 0.5rem 0; text-transform: uppercase; position: relative; display: inline-block; &::after { content: "v1.0"; position: absolute; top: 0; right: -2rem; font-size: 0.6rem; color: #222; } }
+      .status { font-size: 0.7rem; color: $text-muted; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; gap: 0.5rem; &::before { content: ""; display: block; width: 6px; height: 6px; background: #10b981; border-radius: 50%; } }
     }
 
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-
-      .input-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-
-        label {
-          font-size: 0.9rem;
-          color: #94a3b8;
-        }
-
-        input {
-          padding: 0.75rem;
-          background-color: #0f172a;
-          border: 1px solid #475569;
-          border-radius: 4px;
-          color: white;
-          font-family: inherit;
-          transition: border-color 0.3s;
-
-          &:focus {
-            outline: none;
-            border-color: $accent-color;
-            box-shadow: 0 0 5px rgba(16, 185, 129, 0.3);
-          }
-        }
-      }
-
+    nav {
+      display: flex; flex-direction: column; gap: 1.2rem; flex-grow: 1;
       button {
-        padding: 0.75rem;
-        background-color: $accent-color;
-        color: #0f172a;
-        border: none;
-        border-radius: 4px;
-        font-weight: bold;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: background-color 0.3s, transform 0.1s;
-
-        &:hover {
-          background-color: darken($accent-color, 10%);
-        }
-
-        &:active {
-          transform: scale(0.98);
-        }
+        background: transparent; color: #444; border: none; padding: 0.8rem 0; text-align: left; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; border-left: 2px solid transparent; padding-left: 1.2rem; transition: all 0.2s;
+        &:hover { color: white; border-left-color: #222; }
+        &.active { color: white; border-left-color: white; font-weight: 600; }
       }
     }
 
-    .auth-link {
-      margin-top: 1.5rem;
-      text-align: center;
-      font-size: 0.9rem;
-      color: #94a3b8;
+    .logout-sidebar-btn {
+      background: transparent; color: white; border: 1px solid #333; padding: 1.2rem; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 2px; cursor: pointer; transition: 0.2s;
+      &:hover { border-color: #ef4444; color: #ef4444; }
+    }
+  }
 
-      a {
-        color: $accent-color;
-        text-decoration: none;
+  // --- CONTENIDO PRINCIPAL ---
+  .main-content {
+    flex-grow: 1; padding: 5rem; overflow-y: auto;
+
+    .tab-content {
+      max-width: 1000px;
+
+      // FORMULARIO DE CAJA
+      .add-item-card {
+        border: 1px solid $border-color; padding: 3rem; margin-bottom: 5rem; background: $surface; position: relative;
+        // Decoración de esquina simulando coordenadas
+        &::before { content: "/// NEW_ENTRY ///"; position: absolute; top: -0.7rem; left: 2rem; background: $bg-color; padding: 0 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #333; letter-spacing: 2px; }
+
+        h3 { font-weight: 300; text-transform: uppercase; letter-spacing: 3px; margin-top: 0; margin-bottom: 2.5rem; border-bottom: 1px solid #111; padding-bottom: 1rem; }
         
-        &:hover {
-          text-decoration: underline;
+        form {
+          display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
+          input[type="text"], input[type="password"] { padding: 1.2rem; background: transparent; border: 1px solid $border-color; color: white; &:focus { outline: none; border-color: white; } }
+          
+          .password-input-group {
+            display: flex; gap: 0;
+            input { flex: 1; border-right: none; }
+            .toggle-gen-btn { background: transparent; color: #444; border: 1px solid $border-color; padding: 0 1.5rem; cursor: pointer; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; &:hover { background: white; color: black; border-color: white; } }
+          }
+
+          .honeytoken-label { grid-column: span 2; color: #444; display: flex; align-items: center; gap: 0.7rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: color 0.2s; &:hover { color: #f59e0b; } }
+          button[type="submit"] { grid-column: span 2; background: white; color: black; padding: 1.5rem; border: none; font-weight: 600; text-transform: uppercase; letter-spacing: 3px; cursor: pointer; transition: 0.2s; &:hover { background: black; color: white; border: 1px solid white; } }
+        }
+      }
+
+      // LISTA DE ELEMENTOS
+      .items-list {
+        h3 { font-weight: 300; text-transform: uppercase; letter-spacing: 3px; border-bottom: 1px solid $border-color; padding-bottom: 1.5rem; margin-bottom: 3rem; position: relative; &::after { content: "/// [ SECURE_LIST ] ///"; position: absolute; bottom: -0.6rem; left: 0; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #222; } }
+        
+        .vault-item {
+          display: flex; justify-content: space-between; align-items: flex-start; padding: 2rem 0; border-bottom: 1px solid #111; transition: all 0.2s;
+          &:hover { padding-left: 1.5rem; border-color: #222; background: rgba(255,255,255,0.01); }
+
+          &.honeytoken { 
+            border: 1px dashed #333; padding: 2rem; margin-bottom: 1.5rem; background: rgba(245, 158, 11, 0.01);
+            &:hover { border-color: #f59e0b; background: rgba(245, 158, 11, 0.03); }
+          }
+
+          .item-details h4 { margin: 0 0 0.7rem 0; font-weight: 600; font-size: 1.3rem; letter-spacing: 1px; }
+          .item-details p { color: $text-muted; margin: 0.4rem 0; font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; }
+          .blur-text { filter: blur(6px); cursor: crosshair; transition: all 0.3s; &:hover { filter: blur(0); color: white; background: rgba(255,255,255,0.05); padding: 0 0.5rem; } }
+          
+          .badge { border: 1px solid #f59e0b; color: #f59e0b; padding: 0.3rem 0.8rem; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; }
         }
       }
     }
 
-    .error-msg {
-      color: #ef4444;
-      font-size: 0.85rem;
-      text-align: center;
-      margin-bottom: 1rem;
+    // --- GENERADOR STANDALONE ---
+    .password-generator-box.standalone {
+      border: 1px solid $border-color; padding: 4rem; background: $surface; position: relative;
+      &::before { content: "/// CSPRNG_ENGINE ///"; position: absolute; top: -0.7rem; left: 3rem; background: $bg-color; padding: 0 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #333; letter-spacing: 2px; }
+
+      h2 { font-weight: 300; text-transform: uppercase; letter-spacing: 3px; margin-top: 0; }
+      p { color: $text-muted; font-size: 0.85rem; margin-bottom: 3rem; text-transform: uppercase; letter-spacing: 1px; }
+      
+      .result-box {
+        display: flex; margin-bottom: 4rem; border: 1px solid $border-color;
+        .password-display { flex-grow: 1; padding: 2rem; font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; color: white; text-align: center; word-break: break-all; border-right: 1px solid $border-color; }
+        .copy-btn { background: transparent; color: #444; border: none; padding: 0 3rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: 0.2s; &:hover { background: white; color: black; } }
+      }
+      
+      .gen-controls { display: flex; align-items: center; gap: 2rem; margin-bottom: 3rem; border-bottom: 1px solid #111; padding-bottom: 3rem; color: $text-muted; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; input { flex: 1; accent-color: white; } }
+      .gen-checkboxes { display: flex; justify-content: space-between; margin-bottom: 4rem; color: #444; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px; label { cursor: pointer; &:hover { color: white; } input { margin-right: 0.5rem; } } }
+      .gen-btn-large { width: 100%; background: white; color: black; border: 1px solid white; padding: 1.8rem; text-transform: uppercase; letter-spacing: 3px; font-weight: 600; cursor: pointer; transition: 0.2s; &:hover { background: transparent; color: white; } }
     }
   }
 }

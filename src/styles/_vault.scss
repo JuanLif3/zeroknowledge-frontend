@@ -1,136 +1,144 @@
-.vault-container {
+.dashboard-layout {
+  display: flex;
   min-height: 100vh;
-  background-color: $primary-color;
-  padding: 2rem;
 
-  .vault-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #334155;
-    padding-bottom: 1rem;
-    margin-bottom: 2rem;
-
-    h2 { color: $accent-color; margin: 0; }
-    
-    .logout-btn {
-      background: transparent;
-      color: #ef4444;
-      border: 1px solid #ef4444;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      cursor: pointer;
-      &:hover { background: #ef4444; color: white; }
-    }
-  }
-
+  // --- OVERLAY DE DESBLOQUEO ---
   .unlock-overlay {
-    display: flex;
-    justify-content: center;
-    margin-top: 10vh;
-
+    width: 100%; display: flex; justify-content: center; align-items: center;
     .unlock-box {
-      background-color: #1e293b;
-      padding: 2rem;
-      border-radius: 8px;
-      border: 1px solid $accent-color;
-      box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      text-align: center;
+      width: 400px; padding: 3rem; border: 1px solid $border-color; text-align: center;
+      h2 { font-weight: 300; letter-spacing: 4px; border-bottom: 1px solid $border-color; padding-bottom: 1rem; }
+      p { color: $text-muted; font-size: 0.9rem; margin-bottom: 2rem; }
+      input { width: 100%; padding: 1rem; background: transparent; border: 1px solid $border-color; color: white; text-align: center; margin-bottom: 1rem; &:focus { outline: none; border-color: white; } }
+      button { width: 100%; padding: 1rem; background: white; color: black; border: 1px solid white; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; &:hover { background: black; color: white; } }
+    }
+  }
 
-      input {
-        padding: 0.75rem;
-        background: #0f172a;
-        border: 1px solid #475569;
-        color: white;
-        border-radius: 4px;
-      }
+  // --- SIDEBAR ---
+  .sidebar {
+    width: 260px;
+    border-right: 1px solid $border-color;
+    display: flex;
+    flex-direction: column;
+    padding: 2rem;
+
+    .brand {
+      margin-bottom: 4rem;
+      h2 { font-weight: 300; letter-spacing: 3px; margin: 0 0 0.5rem 0; text-transform: uppercase; }
+      .status { font-size: 0.75rem; color: $text-muted; letter-spacing: 1px; text-transform: uppercase; }
+    }
+
+    nav {
+      display: flex; flex-direction: column; gap: 1rem; flex-grow: 1;
       button {
-        padding: 0.75rem;
-        background-color: $accent-color;
-        border: none;
-        font-weight: bold;
-        cursor: pointer;
+        background: transparent; color: $text-muted; border: none; padding: 0.5rem 0; text-align: left; font-size: 0.9rem; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; border-left: 2px solid transparent; padding-left: 1rem; transition: all 0.2s;
+        &:hover { color: white; }
+        &.active { color: white; border-left: 2px solid white; }
       }
+    }
+
+    .logout-sidebar-btn {
+      background: transparent; color: white; border: 1px solid $border-color; padding: 1rem; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; cursor: pointer;
+      &:hover { border-color: white; }
     }
   }
 
-  .vault-content {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-    gap: 2rem;
+  // --- CONTENIDO PRINCIPAL ---
+  .main-content {
+    flex-grow: 1; padding: 4rem; overflow-y: auto;
 
-    @media (max-width: 768px) { grid-template-columns: 1fr; }
+    .tab-content {
+      max-width: 900px;
 
-    .add-item-card {
-      background-color: #1e293b;
-      padding: 1.5rem;
-      border-radius: 8px;
-      border: 1px solid #334155;
+      // FORMULARIO DE CAJA
+      .add-item-card {
+        border: 1px solid $border-color; padding: 2.5rem; margin-bottom: 4rem;
+        h3 { font-weight: 300; text-transform: uppercase; letter-spacing: 2px; margin-top: 0; margin-bottom: 2rem; }
+        
+        form {
+          display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+          input[type="text"], input[type="password"] { padding: 1rem; background: transparent; border: 1px solid $border-color; color: white; &:focus { outline: none; border-color: white; } }
+          
+          .password-input-group {
+            display: flex; gap: 0;
+            input { flex: 1; border-right: none; }
+            .toggle-gen-btn { background: transparent; color: white; border: 1px solid $border-color; padding: 0 1rem; cursor: pointer; font-size: 0.8rem; text-transform: uppercase; &:hover { background: white; color: black; border-color: white; } }
+          }
 
-      form {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-
-        input[type="text"], input[type="password"] {
-          padding: 0.75rem;
-          background: #0f172a;
-          border: 1px solid #475569;
-          color: white;
+          .honeytoken-label { grid-column: span 2; color: $text-muted; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+          button[type="submit"] { grid-column: span 2; background: white; color: black; padding: 1.2rem; border: none; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: 0.2s; &:hover { background: transparent; color: white; border: 1px solid white; } }
         }
+      }
 
-        .honeytoken-label {
-          color: #f59e0b;
-          font-size: 0.9rem;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
+      // LISTA DE ELEMENTOS
+      .items-list {
+        h3 { font-weight: 300; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid $border-color; padding-bottom: 1rem; margin-bottom: 2rem; }
+        
+        .vault-item {
+          display: flex; justify-content: space-between; align-items: flex-start; padding: 1.5rem 0; border-bottom: 1px solid $border-color; transition: padding-left 0.2s;
+          &:hover { padding-left: 1rem; border-color: $text-muted; }
 
-        button {
-          background-color: $accent-color;
-          padding: 0.75rem;
-          border: none;
-          font-weight: bold;
-          cursor: pointer;
+          &.honeytoken { 
+            border: 1px dashed $text-muted; padding: 1.5rem; margin-bottom: 1rem; 
+            &:hover { border-color: white; }
+          }
+
+          .item-details h4 { margin: 0 0 0.5rem 0; font-weight: 600; font-size: 1.2rem; }
+          .item-details p { color: $text-muted; margin: 0.3rem 0; font-size: 0.9rem; font-family: 'JetBrains Mono', monospace; }
+          .blur-text { filter: blur(5px); cursor: crosshair; transition: filter 0.2s; &:hover { filter: blur(0); color: white; } }
+          
+          .badge { border: 1px solid white; padding: 0.2rem 0.6rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
         }
       }
     }
 
-    .items-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-
-      .vault-item {
-        background-color: #1e293b;
-        padding: 1.5rem;
-        border-radius: 8px;
-        border: 1px solid #334155;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-
-        &.honeytoken {
-          border-color: #f59e0b;
-          box-shadow: inset 0 0 10px rgba(245, 158, 11, 0.1);
-        }
-
-        .item-details h4 { margin: 0 0 0.5rem 0; color: white; }
-        .item-details p { margin: 0.2rem 0; color: #94a3b8; font-size: 0.9rem; }
-
-        .badge {
-          background-color: #f59e0b;
-          color: #000;
-          font-size: 0.7rem;
-          font-weight: bold;
-          padding: 0.3rem 0.6rem;
-          border-radius: 20px;
-        }
+    // --- GENERADOR STANDALONE ---
+    .password-generator-box.standalone {
+      border: 1px solid $border-color; padding: 3rem;
+      h2 { font-weight: 300; text-transform: uppercase; letter-spacing: 2px; margin-top: 0; }
+      p { color: $text-muted; font-size: 0.9rem; margin-bottom: 2.5rem; }
+      
+      .result-box {
+        display: flex; margin-bottom: 3rem;
+        .password-display { flex-grow: 1; padding: 1.5rem; border: 1px solid $border-color; font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; border-right: none; }
+        .copy-btn { background: white; color: black; border: none; padding: 0 2rem; font-weight: bold; text-transform: uppercase; cursor: pointer; &:hover { background: transparent; color: white; border: 1px solid white; margin-left: -1px; } }
       }
+      
+      .gen-controls { display: flex; align-items: center; gap: 2rem; margin-bottom: 2.5rem; border-bottom: 1px solid $border-color; padding-bottom: 2.5rem; input { flex: 1; accent-color: white; } }
+      .gen-checkboxes { display: flex; justify-content: space-between; margin-bottom: 3rem; color: $text-muted; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 1px; }
+      .gen-btn-large { width: 100%; background: transparent; color: white; border: 1px solid white; padding: 1.5rem; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; cursor: pointer; &:hover { background: white; color: black; } }
     }
   }
+}
+
+// --- CLASES AUXILIARES PARA ICONOS ---
+.icon-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.icon-btn-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.copy-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
 }
