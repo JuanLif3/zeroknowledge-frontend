@@ -8,11 +8,11 @@ export const vaultService = {
     },
 
     // * Guardar una nueva credencial (ya debe venir encriptada desde la UI)
-    saveVaultItem: async (encryptedTitle, encryptedUsername, encryptedPassword, isHoneytoken) => {
+    saveVaultItem: async (encryptedTitle, itemType, encryptedPayload, isHoneytoken) => {
         const response = await api.post('/vault', {
             encryptedTitle,
-            encryptedUsername,
-            encryptedPassword,
+            itemType,
+            encryptedPayload,
             isHoneytoken
         });
         return response.data;
