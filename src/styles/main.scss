@@ -1,10 +1,11 @@
-// 1. LAS REGLAS @use VAN PRIMERO QUE TODO
 @use 'variables' as *;
+@use 'auth';
+@use 'vault';
 
-// 2. LUEGO LA FUENTE
+// 2. LUEGO LA FUENTE DE GOOGLE
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400&display=swap');
 
-// 3. ESTILOS GLOBALES
+// 3. FINALMENTE LOS ESTILOS GLOBALES
 body {
   background-color: $bg-color;
   background-image: radial-gradient(#111 1px, transparent 1px);
@@ -15,9 +16,12 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-button, input, select, textarea { font-family: inherit; border-radius: 0; box-sizing: border-box; }
-.mono-font { font-family: 'JetBrains Mono', monospace; }
+button, input, select, textarea { 
+  font-family: inherit; 
+  border-radius: 0; 
+  box-sizing: border-box; 
+}
 
-// 4. AL FINAL IMPORTAMOS LOS COMPONENTES
-@use 'auth';
-@use 'vault';
+.mono-font { 
+  font-family: 'JetBrains Mono', monospace; 
+}
