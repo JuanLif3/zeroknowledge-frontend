@@ -1,17 +1,12 @@
+// 1. LAS REGLAS @use VAN PRIMERO QUE TODO
+@use 'variables' as *;
+
+// 2. LUEGO LA FUENTE
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400&display=swap');
 
-// Paleta Monocromática Expandida
-$bg-color: #000000;       // Negro puro
-$surface: #050505;        // Negro elevado
-$border-color: #1a1a1a;   // Líneas muy sutiles
-$text-main: #ffffff;      // Blanco puro
-$text-muted: #888888;     // Gris medio para detalles
-$accent: #ffffff;         // Contraste máximo
-
+// 3. ESTILOS GLOBALES
 body {
   background-color: $bg-color;
-  // --- DETALLE UNICO: PATRÓN DE FONDO ---
-  // Un patrón de puntos sutil para rellenar el "vacio" de fondo
   background-image: radial-gradient(#111 1px, transparent 1px);
   background-size: 20px 20px;
   color: $text-main;
@@ -20,9 +15,9 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-// Reseteo Afilado
-button, input, select { font-family: inherit; border-radius: 0; box-sizing: border-box; }
+button, input, select, textarea { font-family: inherit; border-radius: 0; box-sizing: border-box; }
 .mono-font { font-family: 'JetBrains Mono', monospace; }
 
-@import 'auth';
-@import 'vault';
+// 4. AL FINAL IMPORTAMOS LOS COMPONENTES
+@use 'auth';
+@use 'vault';

@@ -1,8 +1,8 @@
+@use 'variables' as *;
+
 .dashboard-layout {
   display: flex; min-height: 100vh;
-  background-image: radial-gradient(#111 1px, transparent 1px); background-size: 20px 20px;
-
-  // --- OVERLAY DE DESBLOQUEO ---
+  
   .unlock-overlay {
     width: 100%; display: flex; justify-content: center; align-items: center;
     .unlock-box {
@@ -15,7 +15,6 @@
     }
   }
 
-  // --- SIDEBAR ---
   .sidebar {
     width: 280px; border-right: 1px solid $border-color; display: flex; flex-direction: column; padding: 3rem 2rem; background: $surface;
 
@@ -40,7 +39,6 @@
     }
   }
 
-  // --- CONTENIDO PRINCIPAL ---
   .main-content {
     flex-grow: 1; padding: 5rem; overflow-y: auto;
 
@@ -48,22 +46,14 @@
       max-width: 1000px;
       margin: 0 auto;
 
-      // EL NUEVO LAYOUT DIVIDIDO (SPLIT VIEW) PARA LA CAJA
       &.caja-split-layout {
-        display: grid;
-        grid-template-columns: 450px 1fr; // Izquierda: Formulario | Derecha: Lista
-        gap: 4rem;
-        max-width: 1400px; 
-        align-items: start;
+        display: grid; grid-template-columns: 450px 1fr; gap: 4rem; max-width: 1400px; align-items: start;
 
-        // PANEL DE CREACIÓN (IZQUIERDA)
         .add-item-card {
           border: 1px solid $border-color; padding: 3rem; background: $surface; position: sticky; top: 0;
-          &::before { content: "/// COMPOSE ///"; position: absolute; top: -0.6rem; left: 2rem; background: $bg-color; padding: 0 0.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: #444; letter-spacing: 2px; }
-
+          &::before { content: "/// COMPOSE ///"; position: absolute; top: -0.6rem; left: 2rem; background: #000; padding: 0 0.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: #444; letter-spacing: 2px; }
           h3 { font-weight: 300; text-transform: uppercase; letter-spacing: 2px; margin-top: 0; margin-bottom: 2rem; }
 
-          // EL SELECTOR DINÁMICO
           .type-selector {
             display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; border: 1px solid $border-color; margin-bottom: 2.5rem;
             button { background: transparent; color: $text-muted; border: none; padding: 1rem 0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; transition: 0.2s; border-right: 1px solid $border-color; &:last-child { border-right: none; }
@@ -74,7 +64,6 @@
           
           form {
             display: flex; flex-direction: column; gap: 1.5rem;
-            
             input[type="text"], input[type="password"], textarea { width: 100%; padding: 1.2rem; background: transparent; border: 1px solid $border-color; color: white; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; transition: 0.2s; &:focus { outline: none; border-color: white; } }
             textarea { resize: vertical; min-height: 120px; }
             .split-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
@@ -90,7 +79,6 @@
           }
         }
 
-        // PANEL DE LISTA (DERECHA)
         .items-list-container {
           .list-header {
             display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid $border-color; padding-bottom: 1rem; margin-bottom: 2rem; position: relative;
@@ -100,16 +88,12 @@
           }
 
           .items-scroll-area {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
-            gap: 1.5rem;
-
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;
             .empty-msg { color: #444; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
 
             .vault-item {
               border: 1px solid $border-color; padding: 1.5rem; background: $surface; transition: 0.2s; position: relative;
               &:hover { border-color: #444; transform: translateY(-2px); background: rgba(255,255,255,0.01); }
-
               &.honeytoken { border: 1px dashed #333; background: transparent; &:hover { border-color: #f59e0b; background: rgba(245, 158, 11, 0.02); } }
 
               .item-header { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 1rem; border-bottom: 1px solid #111; padding-bottom: 1rem;
@@ -119,7 +103,6 @@
               
               .item-details p { color: $text-muted; margin: 0.5rem 0; font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; }
               .blur-text { filter: blur(6px); cursor: crosshair; transition: all 0.3s; &:hover { filter: blur(0); color: white; background: rgba(255,255,255,0.05); padding: 0 0.5rem; } }
-              
               .badge { position: absolute; top: 1rem; right: 1rem; border: 1px solid #f59e0b; color: #f59e0b; padding: 0.2rem 0.5rem; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;}
             }
           }
@@ -127,11 +110,9 @@
       }
     }
 
-    // --- GENERADOR STANDALONE ---
     .password-generator-box.standalone {
       border: 1px solid $border-color; padding: 4rem; background: $surface; position: relative; max-width: 900px; margin: 0 auto;
-      &::before { content: "/// CSPRNG_ENGINE ///"; position: absolute; top: -0.7rem; left: 3rem; background: $bg-color; padding: 0 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #333; letter-spacing: 2px; }
-
+      &::before { content: "/// CSPRNG_ENGINE ///"; position: absolute; top: -0.7rem; left: 3rem; background: #000; padding: 0 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #333; letter-spacing: 2px; }
       h2 { font-weight: 300; text-transform: uppercase; letter-spacing: 3px; margin-top: 0; }
       p { color: $text-muted; font-size: 0.85rem; margin-bottom: 3rem; text-transform: uppercase; letter-spacing: 1px; }
       
@@ -146,7 +127,6 @@
       .gen-btn-large { width: 100%; background: white; color: black; border: 1px solid white; padding: 1.8rem; text-transform: uppercase; letter-spacing: 3px; font-weight: 600; cursor: pointer; transition: 0.2s; &:hover { background: transparent; color: white; } }
     }
     
-    // --- GENERADOR DENTRO DEL FORMULARIO ---
     .password-generator-box:not(.standalone) {
       border: 1px dashed $border-color; padding: 1.5rem; background: rgba(255,255,255,0.02);
       h4 { margin: 0 0 1rem 0; color: $text-muted; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
@@ -157,7 +137,6 @@
   }
 }
 
-// --- CLASES AUXILIARES PARA ICONOS ---
 .icon-heading { display: flex; align-items: center; gap: 0.75rem; }
 .icon-btn { display: flex; align-items: center; gap: 0.75rem; }
 .icon-btn-center { display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
