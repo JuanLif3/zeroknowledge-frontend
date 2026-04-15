@@ -4,7 +4,7 @@ import { vaultService } from '../services/vaultService';
 import { authService } from '../services/authService';
 import { initCrypto, encryptData, decryptData } from '../services/cryptoService';
 import PasswordGenerator from '../components/PasswordGenerator';
-import { Database, KeySquare, ShieldCheck, Link2, Radar, LogOut, PlusSquare, ShieldAlert, Lock, Unlock, CreditCard, StickyNote, Key } from 'lucide-react';
+import { Database, KeySquare, ShieldCheck, Link2, Radar, LogOut, PlusSquare, ShieldAlert, Lock, Unlock, CreditCard, StickyNote, Key, AlertTriangle, CheckCircle, XOctagon } from 'lucide-react';
 
 const Vault = () => {
     const navigate = useNavigate();
@@ -82,6 +82,61 @@ const Vault = () => {
     };
 
     const handleLogout = () => { authService.logout(); navigate('/login'); };
+
+    // --- MOTOR DE AUDITORÍA ZERO-KNOWLEDGE ---
+    const runAudit = () => {
+        const logins = items.filter(i => i.itemType === 'login');
+        let weakCount = 0;
+        let reusedCount = 0;
+        const passMap = {};
+        const vulnerabilities = [];
+
+        logins.forEach(item => {
+            const decTitle = decryptData(item.encryptedTitle, masterKey);
+            const decPayload = JSON.parse(decryptData(item.encryptedPayload, masterKey));
+            const pass = decPayload.password;
+
+            if (!pass) return;
+
+            // 1. Detectar Contraseñas Débiles (Menos de 10 chars o sin números/símbolos)
+            const isWeak = pass.length < 10 || !/[0-9]/.test(pass) || !/[!@#$%^&*]/.test(pass);
+            if (isWeak) {
+                weakCount++;
+                vulnerabilities.push({ title: decTitle, issue: 'Contraseña Débil (Baja Entropía)' });
+            }
+
+            // 2. Mapear para detectar Reutilizadas
+            if (passMap[pass]) {
+                passMap[pass].count++;
+                passMap[pass].titles.push(decTitle);
+            } else {
+                passMap[pass] = { count: 1, titles: [decTitle] };
+            }
+        });
+
+        // 3. Procesar las reutilizadas
+        Object.values(passMap).forEach(group => {
+            if (group.count > 1) {
+                reusedCount += group.count;
+                group.titles.forEach(t => {
+                    if (!vulnerabilities.find(v => v.title === t && v.issue === 'Contraseña Reutilizada')) {
+                        vulnerabilities.push({ title: t, issue: 'Contraseña Reutilizada' });
+                    }
+                });
+            }
+        });
+
+        // 4. Calcular Score (0 - 100)
+        let score = 100;
+        if (logins.length > 0) {
+            const penalties = (weakCount * 15) + (reusedCount * 20); // Castigo por cada error
+            score = Math.max(0, 100 - (penalties / logins.length));
+        } else {
+            score = 0;
+        }
+
+        return { total: logins.length, weakCount, reusedCount, score: Math.round(score), vulnerabilities };
+    };
 
     const renderContent = () => {
         switch (activeTab) {
@@ -194,10 +249,56 @@ const Vault = () => {
                 );
             case 'generador': return <div className="tab-content"><PasswordGenerator /></div>;
             case 'auditoria': 
+                const auditStats = runAudit();
                 return (
-                    <div className="tab-content coming-soon">
-                        <h2 className="icon-heading"><ShieldCheck size={28}/> Auditoría de Entropía</h2>
-                        <p>Analizando la fortaleza de las llaves en la memoria RAM (Aislamiento de red activo)...</p>
+                    <div className="tab-content audit-dashboard">
+                        <div className="audit-header">
+                            <div>
+                                <h2 className="icon-heading"><ShieldCheck size={28}/> Auditoría de Entropía</h2>
+                                <p>Análisis heurístico local. Ningún dato ha sido enviado al servidor.</p>
+                            </div>
+                            <div className={`score-badge ${auditStats.score > 80 ? 'good' : auditStats.score > 50 ? 'warning' : 'danger'}`}>
+                                <span className="score-value">{auditStats.score}</span>
+                                <span className="score-label">Health Score</span>
+                            </div>
+                        </div>
+
+                        <div className="stats-grid">
+                            <div className="stat-card">
+                                <h4>Total Logins</h4>
+                                <span>{auditStats.total}</span>
+                            </div>
+                            <div className={`stat-card ${auditStats.weakCount > 0 ? 'danger-text' : ''}`}>
+                                <h4>Claves Débiles</h4>
+                                <span>{auditStats.weakCount}</span>
+                            </div>
+                            <div className={`stat-card ${auditStats.reusedCount > 0 ? 'warning-text' : ''}`}>
+                                <h4>Reutilizadas</h4>
+                                <span>{auditStats.reusedCount}</span>
+                            </div>
+                        </div>
+
+                        <div className="vulnerabilities-list">
+                            <h3>/// VULNERABILIDADES DETECTADAS</h3>
+                            {auditStats.vulnerabilities.length === 0 ? (
+                                <div className="all-clear">
+                                    <CheckCircle size={32} />
+                                    <p>Estado Óptimo. No se detectaron vulnerabilidades en tus credenciales.</p>
+                                </div>
+                            ) : (
+                                <div className="vuln-grid">
+                                    {auditStats.vulnerabilities.map((vuln, index) => (
+                                        <div key={index} className="vuln-item">
+                                            {vuln.issue.includes('Débil') ? <XOctagon size={16} className="danger-text"/> : <AlertTriangle size={16} className="warning-text"/>}
+                                            <div className="vuln-info">
+                                                <strong>{vuln.title}</strong>
+                                                <span>{vuln.issue}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 );
                 case 'send': 

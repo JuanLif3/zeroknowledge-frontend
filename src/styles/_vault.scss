@@ -133,6 +133,61 @@
           }
         }
       }
+
+      // --- DASHBOARD DE AUDITORÍA ---
+      &.audit-dashboard {
+        max-width: 900px;
+        
+        .audit-header {
+          display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3rem; border-bottom: 1px solid $border-color; padding-bottom: 2rem;
+          h2 { margin-top: 0; font-weight: 300; text-transform: uppercase; letter-spacing: 3px; }
+          p { color: $text-muted; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; text-transform: uppercase; }
+          
+          .score-badge {
+            border: 2px solid #333; padding: 1.5rem 2rem; text-align: center; display: flex; flex-direction: column; background: $surface;
+            &.good { border-color: #10b981; color: #10b981; box-shadow: 0 0 20px rgba(16, 185, 129, 0.1); }
+            &.warning { border-color: #f59e0b; color: #f59e0b; box-shadow: 0 0 20px rgba(245, 158, 11, 0.1); }
+            &.danger { border-color: #ef4444; color: #ef4444; box-shadow: 0 0 20px rgba(239, 68, 68, 0.1); }
+            .score-value { font-size: 3rem; font-weight: bold; font-family: 'JetBrains Mono', monospace; line-height: 1; }
+            .score-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; margin-top: 0.5rem; color: $text-main; }
+          }
+        }
+
+        .stats-grid {
+          display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem; margin-bottom: 4rem;
+          .stat-card {
+            border: 1px solid $border-color; padding: 2rem; background: $surface; text-align: center;
+            h4 { margin: 0 0 1rem 0; color: $text-muted; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; }
+            span { font-size: 2.5rem; font-family: 'JetBrains Mono', monospace; font-weight: bold; }
+            &.danger-text span { color: #ef4444; }
+            &.warning-text span { color: #f59e0b; }
+          }
+        }
+
+        .vulnerabilities-list {
+          h3 { font-weight: 300; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 2rem; color: $text-muted; font-size: 1rem; }
+          
+          .all-clear {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem; border: 1px dashed #10b981; color: #10b981; background: rgba(16, 185, 129, 0.05);
+            p { margin-top: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; text-align: center;}
+          }
+
+          .vuln-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+            .vuln-item {
+              display: flex; align-items: flex-start; gap: 1rem; padding: 1.5rem; border: 1px solid $border-color; background: $surface; transition: 0.2s;
+              &:hover { border-color: #444; transform: translateX(5px); }
+              .danger-text { color: #ef4444; }
+              .warning-text { color: #f59e0b; }
+              .vuln-info {
+                display: flex; flex-direction: column; gap: 0.3rem;
+                strong { font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; }
+                span { color: $text-muted; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; }
+              }
+            }
+          }
+        }
+      }
     }
 
     .password-generator-box.standalone {
