@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Vault from './pages/Vault';
+import SharedSecret from './pages/SharedSecret'
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/vault" element={<Vault />} />
+        <Route path="/share/:id" element={<SharedSecret />} />
       </Routes>
     </Router>
   );

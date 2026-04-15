@@ -4,7 +4,8 @@ import { vaultService } from '../services/vaultService';
 import { authService } from '../services/authService';
 import { initCrypto, encryptData, decryptData } from '../services/cryptoService';
 import PasswordGenerator from '../components/PasswordGenerator';
-import { Database, KeySquare, ShieldCheck, Link2, Radar, LogOut, PlusSquare, ShieldAlert, Lock, Unlock, CreditCard, StickyNote, Key, AlertTriangle, CheckCircle, XOctagon } from 'lucide-react';
+import { secretService } from '../services/secretService';
+import { Database, KeySquare, ShieldCheck, Link2, Radar, LogOut, PlusSquare, ShieldAlert, Lock, Unlock, CreditCard, StickyNote, Key, AlertTriangle, CheckCircle, XOctagon, Copy } from 'lucide-react';
 
 const Vault = () => {
     const navigate = useNavigate();
@@ -32,6 +33,9 @@ const Vault = () => {
 
     // Estado para NOTA
     const [noteContent, setNoteContent] = useState('');
+    const [secretMessage, setSecretMessage] = useState('');
+    const [secretExpiry, setSecretExpiry] = useState(60); // Minutos por defecto
+    const [secretLink, setSecretLink] = useState('');
 
     useEffect(() => { initCrypto(); fetchVault(); }, []);
 
@@ -136,6 +140,37 @@ const Vault = () => {
         }
 
         return { total: logins.length, weakCount, reusedCount, score: Math.round(score), vulnerabilities };
+    };
+
+    // --- MAGIA ZERO-KNOWLEDGE: GENERAR ENLACE EFÍMERO ---
+    const handleGenerateSecretLink = async (e) => {
+        e.preventDefault();
+        if (!secretMessage) return alert("Escribe un secreto primero");
+
+        try {
+            // 1. Generar una LLAVE TEMPORAL aleatoria en la RAM (No es tu Master Key)
+            const randomArray = new Uint32Array(4);
+            window.crypto.getRandomValues(randomArray);
+            const temporaryKey = Array.from(randomArray, dec => dec.toString(16)).join('');
+
+            // 2. Encriptar el mensaje con esa llave temporal
+            const encryptedMessage = encryptData(secretMessage, temporaryKey);
+
+            // 3. Enviar SOLO el texto cifrado a Java
+            const secretId = await secretService.createSecret(encryptedMessage, secretExpiry);
+
+            // 4. Crear el Link Mágico (ID + Hashtag + Llave Temporal)
+            const link = `${window.location.origin}/share/${secretId}#${temporaryKey}`;
+            setSecretLink(link);
+            setSecretMessage(''); // Borramos el texto por seguridad
+        } catch (error) {
+            alert("Error al generar el link seguro.");
+        }
+    };
+
+    const copySecretLink = () => {
+        navigator.clipboard.writeText(secretLink);
+        alert("¡Link copiado! Envíalo por un chat seguro.");
     };
 
     const renderContent = () => {
@@ -303,9 +338,55 @@ const Vault = () => {
                 );
                 case 'send': 
                 return (
-                    <div className="tab-content coming-soon">
+                    <div className="tab-content standalone-form">
                         <h2 className="icon-heading"><Link2 size={28}/> Transmisión Efímera (E2EE)</h2>
-                        <p>Módulo para generar enlaces de autodestrucción (Lectura Única).</p>
+                        <p style={{color: '#888', marginBottom: '2rem'}}>Crea un enlace que se autodestruirá al ser leído. El servidor nunca conocerá el contenido.</p>
+                        
+                        {!secretLink ? (
+                            <form onSubmit={handleGenerateSecretLink} className="add-item-card" style={{border: '1px solid #1a1a1a'}}>
+                                <textarea 
+                                    placeholder="Escribe el texto, contraseña o nota que deseas compartir de forma segura..." 
+                                    required rows="6" 
+                                    value={secretMessage} 
+                                    onChange={e => setSecretMessage(e.target.value)}
+                                    style={{width: '100%', padding: '1rem', background: 'transparent', color: 'white', border: '1px solid #333', fontFamily: 'monospace'}}
+                                />
+                                
+                                <div style={{display: 'flex', gap: '1rem', marginTop: '1.5rem', alignItems: 'center'}}>
+                                    <label style={{color: '#888', fontSize: '0.8rem', textTransform: 'uppercase'}}>Destrucción Automática en:</label>
+                                    <select 
+                                        value={secretExpiry} 
+                                        onChange={e => setSecretExpiry(Number(e.target.value))}
+                                        style={{background: '#050505', color: 'white', border: '1px solid #333', padding: '0.5rem'}}
+                                    >
+                                        <option value={15}>15 Minutos</option>
+                                        <option value={60}>1 Hora</option>
+                                        <option value={1440}>24 Horas</option>
+                                    </select>
+                                </div>
+
+                                <button type="submit" style={{width: '100%', marginTop: '2rem', padding: '1rem', background: 'white', color: 'black', fontWeight: 'bold', cursor: 'pointer', border: 'none', textTransform: 'uppercase', letterSpacing: '2px'}}>
+                                    Cifrar y Generar Enlace
+                                </button>
+                            </form>
+                        ) : (
+                            <div className="add-item-card" style={{border: '1px solid #10b981', textAlign: 'center'}}>
+                                <CheckCircle size={48} color="#10b981" style={{marginBottom: '1rem'}} />
+                                <h3 style={{marginTop: 0}}>Enlace Generado Exitosamente</h3>
+                                <p style={{color: '#888', fontSize: '0.9rem'}}>El secreto ha sido cifrado en tu dispositivo. Quien tenga este enlace podrá abrirlo <strong>una sola vez</strong>.</p>
+                                
+                                <div style={{background: '#050505', padding: '1rem', border: '1px dashed #10b981', margin: '2rem 0', wordBreak: 'break-all', fontFamily: 'monospace', color: '#10b981'}}>
+                                    {secretLink}
+                                </div>
+
+                                <button onClick={copySecretLink} className="icon-btn-center" style={{width: '100%', padding: '1rem', background: '#10b981', color: 'black', fontWeight: 'bold', border: 'none', cursor: 'pointer'}}>
+                                    <Copy size={18} /> Copiar Enlace Seguro
+                                </button>
+                                <button onClick={() => setSecretLink('')} style={{background: 'transparent', color: 'white', border: 'none', marginTop: '1rem', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline'}}>
+                                    Crear otro secreto
+                                </button>
+                            </div>
+                        )}
                     </div>
                 );
                 case 'radar': 
