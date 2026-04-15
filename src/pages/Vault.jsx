@@ -4,7 +4,7 @@ import { vaultService } from '../services/vaultService';
 import { authService } from '../services/authService';
 import { initCrypto, encryptData, decryptData } from '../services/cryptoService';
 import PasswordGenerator from '../components/PasswordGenerator';
-import { Database, KeySquare, Activity, Settings, LogOut, PlusSquare, ShieldAlert, Lock, Unlock, CreditCard, StickyNote, Key } from 'lucide-react';
+import { Database, KeySquare, ShieldCheck, Link2, Radar, LogOut, PlusSquare, ShieldAlert, Lock, Unlock, CreditCard, StickyNote, Key } from 'lucide-react';
 
 const Vault = () => {
     const navigate = useNavigate();
@@ -198,7 +198,27 @@ const Vault = () => {
                     </div>
                 );
             case 'generador': return <div className="tab-content"><PasswordGenerator /></div>;
-            case 'auditoria': return <div className="tab-content coming-soon"><h2 className="icon-heading"><Activity size={28}/> Auditoría de Salud</h2><p>Módulo de análisis criptográfico en desarrollo.</p></div>;
+            case 'auditoria': 
+                return (
+                    <div className="tab-content coming-soon">
+                        <h2 className="icon-heading"><ShieldCheck size={28}/> Auditoría de Entropía</h2>
+                        <p>Analizando la fortaleza de las llaves en la memoria RAM (Aislamiento de red activo)...</p>
+                    </div>
+                );
+                case 'send': 
+                return (
+                    <div className="tab-content coming-soon">
+                        <h2 className="icon-heading"><Link2 size={28}/> Transmisión Efímera (E2EE)</h2>
+                        <p>Módulo para generar enlaces de autodestrucción (Lectura Única).</p>
+                    </div>
+                );
+                case 'radar': 
+                return (
+                    <div className="tab-content coming-soon">
+                        <h2 className="icon-heading"><Radar size={28}/> Monitoreo de Honeytokens</h2>
+                        <p>Escaneando registros de intrusión y uso de credenciales trampa...</p>
+                    </div>
+                );
             case 'configuracion': return <div className="tab-content coming-soon"><h2 className="icon-heading"><Settings size={28}/> Configuración</h2><p>Parámetros del sistema y rotación de llaves.</p></div>;
             default: return null;
         }
@@ -223,13 +243,37 @@ const Vault = () => {
                             <h2>ZK-Vault</h2>
                             <span className="status">Conexión Segura</span>
                         </div>
-                        <nav>
-                            <button className={activeTab === 'caja' ? 'active icon-btn' : 'icon-btn'} onClick={() => setActiveTab('caja')}><Database size={18} /> Mi Caja</button>
-                            <button className={activeTab === 'generador' ? 'active icon-btn' : 'icon-btn'} onClick={() => setActiveTab('generador')}><KeySquare size={18} /> Generador</button>
-                            <button className={activeTab === 'auditoria' ? 'active icon-btn' : 'icon-btn'} onClick={() => setActiveTab('auditoria')}><Activity size={18} /> Auditoría</button>
-                            <button className={activeTab === 'configuracion' ? 'active icon-btn' : 'icon-btn'} onClick={() => setActiveTab('configuracion')}><Settings size={18} /> Parámetros</button>
-                        </nav>
-                        <button className="logout-sidebar-btn icon-btn-center" onClick={handleLogout}><LogOut size={16} /> Finalizar Sesión</button>
+                        
+                        <div className="nav-group">
+                            <span className="nav-label">/// CORE_SYSTEM</span>
+                            <nav>
+                                <button className={activeTab === 'caja' ? 'active icon-btn' : 'icon-btn'} onClick={() => setActiveTab('caja')}>
+                                    <Database size={18} /> Caja Cifrada
+                                </button>
+                                <button className={activeTab === 'generador' ? 'active icon-btn' : 'icon-btn'} onClick={() => setActiveTab('generador')}>
+                                    <KeySquare size={18} /> Motor CSPRNG
+                                </button>
+                            </nav>
+                        </div>
+
+                        <div className="nav-group">
+                            <span className="nav-label">/// ZERO_KNOWLEDGE</span>
+                            <nav>
+                                <button className={activeTab === 'auditoria' ? 'active icon-btn' : 'icon-btn'} onClick={() => setActiveTab('auditoria')}>
+                                    <ShieldCheck size={18} /> Auditoría Local
+                                </button>
+                                <button className={activeTab === 'send' ? 'active icon-btn' : 'icon-btn'} onClick={() => setActiveTab('send')}>
+                                    <Link2 size={18} /> Envío Efímero
+                                </button>
+                                <button className={activeTab === 'radar' ? 'active icon-btn' : 'icon-btn'} onClick={() => setActiveTab('radar')}>
+                                    <Radar size={18} /> Radar Honeytoken
+                                </button>
+                            </nav>
+                        </div>
+
+                        <button className="logout-sidebar-btn icon-btn-center" onClick={handleLogout}>
+                            <LogOut size={16} /> Finalizar Sesión
+                        </button>
                     </aside>
                     <main className="main-content">
                         {renderContent()}

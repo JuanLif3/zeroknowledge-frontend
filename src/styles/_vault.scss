@@ -24,6 +24,21 @@
       .status { font-size: 0.7rem; color: $text-muted; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; gap: 0.5rem; &::before { content: ""; display: block; width: 6px; height: 6px; background: #10b981; border-radius: 50%; } }
     }
 
+    .nav-group {
+      margin-bottom: 2rem;
+      flex-grow: 0;
+
+      .nav-label {
+        display: block;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.65rem;
+        color: #333;
+        letter-spacing: 2px;
+        margin-bottom: 1rem;
+        padding-left: 1.2rem;
+      }
+    }
+
     nav {
       display: flex; flex-direction: column; gap: 1.2rem; flex-grow: 1;
       button {
