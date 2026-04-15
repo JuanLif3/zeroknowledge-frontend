@@ -18,6 +18,7 @@ const Vault = () => {
     const [title, setTitle] = useState('');
     const [isHoneytoken, setIsHoneytoken] = useState(false);
     const [showGenerator, setShowGenerator] = useState(false);
+    const [filterType, setFilterType] = useState('all');
 
     // Estados para LOGIN
     const [username, setUsername] = useState('');
@@ -142,24 +143,26 @@ const Vault = () => {
                         <div className="items-list-container">
                             <div className="list-header">
                                 <h3>Bóveda Local</h3>
-                                <span className="item-count">{items.length} ENTRIES</span>
+                                <span className="item-count">{filteredItems.length} ENTRIES</span>
+                            </div>
+
+                            {/* LOS BOTONES DE FILTRO */}
+                            <div className="vault-filters">
+                                <button className={filterType === 'all' ? 'active' : ''} onClick={() => setFilterType('all')}>Todo</button>
+                                <button className={filterType === 'login' ? 'active' : ''} onClick={() => setFilterType('login')}><Key size={12}/> Logins</button>
+                                <button className={filterType === 'tarjeta' ? 'active' : ''} onClick={() => setFilterType('tarjeta')}><CreditCard size={12}/> Tarjetas</button>
+                                <button className={filterType === 'nota' ? 'active' : ''} onClick={() => setFilterType('nota')}><StickyNote size={12}/> Notas</button>
                             </div>
                             
                             <div className="items-scroll-area">
-                                {items.length === 0 && <p className="empty-msg">No hay datos en esta sección.</p>}
+                                {filteredItems.length === 0 && <p className="empty-msg">No hay datos en esta categoría.</p>}
                                 
-                                {items.map(item => {
-                                    // LA MAGIA DE LA DESENCRIPTACIÓN Y DESEMPAQUETADO
+                                {filteredItems.map(item => {
                                     const decTitle = decryptData(item.encryptedTitle, masterKey);
                                     const decPayloadString = decryptData(item.encryptedPayload, masterKey);
-                                    
                                     let payload = {};
-                                    try {
-                                        // Intentamos convertir el texto desencriptado de vuelta a JSON
-                                        payload = JSON.parse(decPayloadString);
-                                    } catch (e) {
-                                        payload = { error: "Datos corruptos o clave inválida" };
-                                    }
+                                    try { payload = JSON.parse(decPayloadString); } 
+                                    catch (e) { payload = { error: "Datos corruptos" }; }
 
                                     return (
                                         <div key={item.id} className={`vault-item ${item.isHoneytoken ? 'honeytoken' : ''}`}>
@@ -170,19 +173,11 @@ const Vault = () => {
                                                 <h4>{decTitle}</h4>
                                             </div>
                                             <div className="item-details">
-                                                {/* Renderizamos dependiendo del TIPO */}
                                                 {item.itemType === 'login' && (
-                                                    <>
-                                                        <p><strong>USR:</strong> {payload.username}</p>
-                                                        <p className="blur-text"><strong>KEY:</strong> {payload.password}</p>
-                                                    </>
+                                                    <><p><strong>USR:</strong> {payload.username}</p><p className="blur-text"><strong>KEY:</strong> {payload.password}</p></>
                                                 )}
                                                 {item.itemType === 'tarjeta' && (
-                                                    <>
-                                                        <p><strong>NÚM:</strong> {payload.cardNumber}</p>
-                                                        <p><strong>VENCE:</strong> {payload.cardExpiry}</p>
-                                                        <p className="blur-text"><strong>CVV:</strong> {payload.cardCvv}</p>
-                                                    </>
+                                                    <><p><strong>NÚM:</strong> {payload.cardNumber}</p><p><strong>VENCE:</strong> {payload.cardExpiry}</p><p className="blur-text"><strong>CVV:</strong> {payload.cardCvv}</p></>
                                                 )}
                                                 {item.itemType === 'nota' && (
                                                     <p className="blur-text"><strong>TXT:</strong> {payload.noteContent}</p>
@@ -223,6 +218,12 @@ const Vault = () => {
             default: return null;
         }
     };
+
+    // --- LÓGICA DE FILTRADO EN TIEMPO REAL ---
+    const filteredItems = items.filter(item => {
+        if (filterType === 'all') return true;
+        return item.itemType === filterType;
+    });
 
     return (
         <div className="dashboard-layout">

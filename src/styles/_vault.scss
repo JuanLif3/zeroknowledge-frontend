@@ -102,6 +102,16 @@
             .item-count { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #444; letter-spacing: 1px; }
           }
 
+          // ESTILOS DE LOS FILTROS
+          .vault-filters {
+            display: flex; gap: 1rem; margin-bottom: 2rem;
+            button {
+              background: transparent; color: $text-muted; border: 1px solid #333; padding: 0.5rem 1rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 0.4rem;
+              &:hover { border-color: $text-main; color: $text-main; }
+              &.active { background: $text-main; color: $bg-color; font-weight: bold; }
+            }
+          }
+
           .items-scroll-area {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem;
             .empty-msg { color: #444; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
