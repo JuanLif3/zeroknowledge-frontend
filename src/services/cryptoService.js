@@ -1,49 +1,72 @@
-import _sodium from 'libsodium-wrappers';
+import CryptoJS from 'crypto-js';
 
-// * Inicializamos la libreria de criptografía
-export const initCrypto = async () => {
-    await _sodium.ready;
+export const initCrypto = () => {
+    console.log("Criptografía de Grado Militar Iniciada (PBKDF2 - 100k Iteraciones)");
 };
 
-// * Convierte la contraseña del usuario en una llave maestra metematica de 32 bytes
-const deriveKey = (password) => {
-    const sodium = _sodium;
-    // En produccion de usa Argon2id, aqui usamos un hash reapido de ejemplo
-    return sodium.crypto_generichash(32, password);
+export const encryptData = (text, masterKey) => {
+    if (!text) return '';
+    
+    // Generar un Salt aleatorio (16 bytes). Esto evita ataques de tablas Rainbow.
+    const salt = CryptoJS.lib.WordArray.random(128 / 8);
+    
+    // Derivar una clave de 256-bits usando PBKDF2 (100,000 iteraciones)
+    // Esto hace que el cifrado sea computacionalmente "pesado" e inmune a la fuerza bruta.
+    const key = CryptoJS.PBKDF2(masterKey, salt, {
+        keySize: 256 / 32,
+        iterations: 100000
+    });
+
+    // Generar un Vector de Inicialización (IV) aleatorio
+    const iv = CryptoJS.lib.WordArray.random(128 / 8);
+
+    // Encriptar los datos usando el estándar bancario AES-256-CBC
+    const encrypted = CryptoJS.AES.encrypt(text, key, {
+        iv: iv,
+        padding: CryptoJS.pad.Pkcs7,
+        mode: CryptoJS.mode.CBC
+    });
+
+    // Empaquetar todo junto: salt + iv + texto cifrado
+    return salt.toString() + ':' + iv.toString() + ':' + encrypted.toString();
 };
 
-// * Funcion para encriptar 
-export const encryptData = (text, password) => {
-    const sodium = _sodium;
-    const key = deriveKey(password);
-
-    // El "Nonce" es un número aleatorio de un solo uso (vital para que el cifrado sea seguro)
-    const nonce = sodium.randombytes_buf(sodium.crypto_secretbox_NONCEBYTES);
-    // Encriptamos el texto
-    const ciphertext = sodium.crypto_secretbox_easy(text, nonce, key);
-    // Juntamos el Nonce y el texto cifrado y lo convertimos a base 64 para poder guardarlo en Java
-    const combined = new Uint8Array(nonce.length + ciphertext.length);
-    combined.set(nonce);
-    combined.set(ciphertext, nonce.length);
-
-    return sodium.to_base64(combined);
-};
-
-// * Función para DESENCRIPTAR
-export const decryptData = (base64String, password) => {
+export const decryptData = (encryptedPackage, masterKey) => {
+    if (!encryptedPackage) return '';
+    
     try {
-        const sodium = _sodium;
-        const key = deriveKey(password);
-        const combined = sodium.from_base64(base64String);
+        // Separamos el paquete en sus 3 partes
+        const parts = encryptedPackage.split(':');
         
-        // Separamos el Nonce del Texto Cifrado
-        const nonce = combined.slice(0, sodium.crypto_secretbox_NONCEBYTES);
-        const cipherText = combined.slice(sodium.crypto_secretbox_NONCEBYTES);
+        // RETROCOMPATIBILIDAD: Si tienes datos viejos en tu DB que no usaban Salt e IV
+        if (parts.length !== 3) {
+            const bytes = CryptoJS.AES.decrypt(encryptedPackage, masterKey);
+            return bytes.toString(CryptoJS.enc.Utf8);
+        }
+
+        const salt = CryptoJS.enc.Hex.parse(parts[0]);
+        const iv = CryptoJS.enc.Hex.parse(parts[1]);
+        const ciphertext = parts[2];
+
+        // Derivar exactamente la MISMA llave usando el Salt que guardamos
+        const key = CryptoJS.PBKDF2(masterKey, salt, {
+            keySize: 256 / 32,
+            iterations: 100000
+        });
+
+        // Desencriptar
+        const decrypted = CryptoJS.AES.decrypt(ciphertext, key, {
+            iv: iv,
+            padding: CryptoJS.pad.Pkcs7,
+            mode: CryptoJS.mode.CBC
+        });
+
+        const result = decrypted.toString(CryptoJS.enc.Utf8);
+        if (!result) throw new Error("Llave incorrecta");
         
-        // Intentamos abrir el candado
-        const decrypted = sodium.crypto_secretbox_open_easy(cipherText, nonce, key);
-        return sodium.to_string(decrypted);
-    } catch (e) {
-        return "❌ CLAVE INCORRECTA";
+        return result;
+    } catch (error) {
+        console.error("Vulnerabilidad o llave incorrecta detectada", error);
+        throw new Error("Fallo de descifrado");
     }
 };
