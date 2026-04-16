@@ -255,7 +255,7 @@ const Vault = () => {
                                     catch (e) { payload = { error: "Datos corruptos" }; }
 
                                     return (
-                                        <div key={item.id} className={`vault-item ${item.isHoneytoken ? 'honeytoken' : ''}`}>
+                                        <div key={item.id} className={`vault-item ${item.honeytoken ? 'honeytoken' : ''}`}>
                                             <div className="item-header">
                                                 {item.itemType === 'login' && <Key size={16} className="item-icon" />}
                                                 {item.itemType === 'tarjeta' && <CreditCard size={16} className="item-icon" />}
@@ -274,7 +274,7 @@ const Vault = () => {
                                                 )}
                                                 {payload.error && <p style={{color: 'red'}}>{payload.error}</p>}
                                             </div>
-                                            {item.isHoneytoken && <span className="badge"><ShieldAlert size={12} style={{marginRight: '4px'}}/> TRAMPA</span>}
+                                            {item.honeytoken && <span className="badge"><ShieldAlert size={12} style={{marginRight: '4px'}}/> TRAMPA</span>}
                                         </div>
                                     );
                                 })}
@@ -390,7 +390,7 @@ const Vault = () => {
                     </div>
                 );
                 case 'radar': 
-                const honeytokens = items.filter(i => i.isHoneytoken);
+                const honeytokens = items.filter(i => i.honeytoken);
                 return (
                     <div className="tab-content radar-dashboard">
                         <div className="radar-header">

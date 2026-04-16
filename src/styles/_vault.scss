@@ -27,16 +27,7 @@
     .nav-group {
       margin-bottom: 2rem;
       flex-grow: 0;
-
-      .nav-label {
-        display: block;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.65rem;
-        color: #333;
-        letter-spacing: 2px;
-        margin-bottom: 1rem;
-        padding-left: 1.2rem;
-      }
+      .nav-label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: #333; letter-spacing: 2px; margin-bottom: 1rem; padding-left: 1.2rem; }
     }
 
     nav {
@@ -61,6 +52,7 @@
       max-width: 1000px;
       margin: 0 auto;
 
+      // --- 1. CAJA ---
       &.caja-split-layout {
         display: grid; grid-template-columns: 450px 1fr; gap: 4rem; max-width: 1400px; align-items: start;
 
@@ -102,7 +94,6 @@
             .item-count { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #444; letter-spacing: 1px; }
           }
 
-          // ESTILOS DE LOS FILTROS
           .vault-filters {
             display: flex; gap: 1rem; margin-bottom: 2rem;
             button {
@@ -134,7 +125,7 @@
         }
       }
 
-      // --- DASHBOARD DE AUDITORÍA ---
+      // --- 2. AUDITORÍA ---
       &.audit-dashboard {
         max-width: 900px;
         
@@ -188,45 +179,16 @@
           }
         }
       }
-    }
 
-    .password-generator-box.standalone {
-      border: 1px solid $border-color; padding: 4rem; background: $surface; position: relative; max-width: 900px; margin: 0 auto;
-      &::before { content: "/// CSPRNG_ENGINE ///"; position: absolute; top: -0.7rem; left: 3rem; background: #000; padding: 0 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #333; letter-spacing: 2px; }
-      h2 { font-weight: 300; text-transform: uppercase; letter-spacing: 3px; margin-top: 0; }
-      p { color: $text-muted; font-size: 0.85rem; margin-bottom: 3rem; text-transform: uppercase; letter-spacing: 1px; }
-      
-      .result-box {
-        display: flex; margin-bottom: 4rem; border: 1px solid $border-color;
-        .password-display { flex-grow: 1; padding: 2rem; font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; color: white; text-align: center; word-break: break-all; border-right: 1px solid $border-color; }
-        .copy-btn { background: transparent; color: #444; border: none; padding: 0 3rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: 0.2s; &:hover { background: white; color: black; } }
-      }
-      
-      .gen-controls { display: flex; align-items: center; gap: 2rem; margin-bottom: 3rem; border-bottom: 1px solid #111; padding-bottom: 3rem; color: $text-muted; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; input { flex: 1; accent-color: white; } }
-      .gen-checkboxes { display: flex; justify-content: space-between; margin-bottom: 4rem; color: #444; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px; label { cursor: pointer; display: flex; align-items: center; gap: 0.5rem; &:hover { color: white; } } }
-      .gen-btn-large { width: 100%; background: white; color: black; border: 1px solid white; padding: 1.8rem; text-transform: uppercase; letter-spacing: 3px; font-weight: 600; cursor: pointer; transition: 0.2s; &:hover { background: transparent; color: white; } }
-    }
-    
-    .password-generator-box:not(.standalone) {
-      border: 1px dashed $border-color; padding: 1.5rem; background: rgba(255,255,255,0.02);
-      h4 { margin: 0 0 1rem 0; color: $text-muted; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
-      .gen-controls { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; color: $text-muted; font-size: 0.75rem; input { flex: 1; accent-color: white; } }
-      .gen-checkboxes { display: flex; justify-content: space-between; margin-bottom: 1.5rem; color: #444; font-size: 0.7rem; text-transform: uppercase; label { cursor: pointer; display: flex; align-items: center; gap: 0.2rem;} }
-      .gen-btn { width: 100%; background: transparent; color: white; border: 1px solid $border-color; padding: 1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; &:hover { background: white; color: black; } }
-    }
-  }
-
-  // --- DASHBOARD DEL RADAR HONEYTOKEN ---
+      // --- 3. RADAR HONEYTOKEN ---
       &.radar-dashboard {
         max-width: 900px;
         
         .radar-header {
           display: flex; gap: 3rem; align-items: center; margin-bottom: 4rem; border-bottom: 1px solid $border-color; padding-bottom: 3rem;
           
-          // LA ANIMACIÓN DEL RADAR
           .radar-display {
             width: 120px; height: 120px; border: 1px solid #f59e0b; border-radius: 50%; position: relative; overflow: hidden; background: rgba(245, 158, 11, 0.05); box-shadow: 0 0 20px rgba(245, 158, 11, 0.1); flex-shrink: 0;
-            // Líneas de la cruz del radar
             &::before { content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 1px; background: rgba(245, 158, 11, 0.3); }
             &::after { content: ''; position: absolute; top: 0; left: 50%; width: 1px; height: 100%; background: rgba(245, 158, 11, 0.3); }
             
@@ -277,7 +239,39 @@
         }
       }
 
-// Animaciones Globales (Pon esto hasta el final del archivo _vault.scss, fuera de todas las llaves)
+    } // Fin de .tab-content
+
+    // ESTILOS STANDALONE DE GENERADOR (Fuera de .tab-content)
+    .password-generator-box.standalone {
+      border: 1px solid $border-color; padding: 4rem; background: $surface; position: relative; max-width: 900px; margin: 0 auto;
+      &::before { content: "/// CSPRNG_ENGINE ///"; position: absolute; top: -0.7rem; left: 3rem; background: #000; padding: 0 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #333; letter-spacing: 2px; }
+      h2 { font-weight: 300; text-transform: uppercase; letter-spacing: 3px; margin-top: 0; }
+      p { color: $text-muted; font-size: 0.85rem; margin-bottom: 3rem; text-transform: uppercase; letter-spacing: 1px; }
+      
+      .result-box {
+        display: flex; margin-bottom: 4rem; border: 1px solid $border-color;
+        .password-display { flex-grow: 1; padding: 2rem; font-family: 'JetBrains Mono', monospace; font-size: 1.6rem; color: white; text-align: center; word-break: break-all; border-right: 1px solid $border-color; }
+        .copy-btn { background: transparent; color: #444; border: none; padding: 0 3rem; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: 0.2s; &:hover { background: white; color: black; } }
+      }
+      
+      .gen-controls { display: flex; align-items: center; gap: 2rem; margin-bottom: 3rem; border-bottom: 1px solid #111; padding-bottom: 3rem; color: $text-muted; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; input { flex: 1; accent-color: white; } }
+      .gen-checkboxes { display: flex; justify-content: space-between; margin-bottom: 4rem; color: #444; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px; label { cursor: pointer; display: flex; align-items: center; gap: 0.5rem; &:hover { color: white; } } }
+      .gen-btn-large { width: 100%; background: white; color: black; border: 1px solid white; padding: 1.8rem; text-transform: uppercase; letter-spacing: 3px; font-weight: 600; cursor: pointer; transition: 0.2s; &:hover { background: transparent; color: white; } }
+    }
+    
+    .password-generator-box:not(.standalone) {
+      border: 1px dashed $border-color; padding: 1.5rem; background: rgba(255,255,255,0.02);
+      h4 { margin: 0 0 1rem 0; color: $text-muted; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
+      .gen-controls { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; color: $text-muted; font-size: 0.75rem; input { flex: 1; accent-color: white; } }
+      .gen-checkboxes { display: flex; justify-content: space-between; margin-bottom: 1.5rem; color: #444; font-size: 0.7rem; text-transform: uppercase; label { cursor: pointer; display: flex; align-items: center; gap: 0.2rem;} }
+      .gen-btn { width: 100%; background: transparent; color: white; border: 1px solid $border-color; padding: 1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; &:hover { background: white; color: black; } }
+    }
+  } // Fin de .main-content
+} // Fin de .dashboard-layout
+
+// ==========================================
+// ANIMACIONES GLOBALES (¡Tienen que ir aquí afuera!)
+// ==========================================
 @keyframes sweep {
   to { transform: rotate(360deg); }
 }
@@ -286,8 +280,10 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
 }
-}
 
+// ==========================================
+// CLASES AUXILIARES GLOBALES
+// ==========================================
 .icon-heading { display: flex; align-items: center; gap: 0.75rem; }
 .icon-btn { display: flex; align-items: center; gap: 0.75rem; }
 .icon-btn-center { display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
