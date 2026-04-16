@@ -1,28 +1,18 @@
 import api from './api';
 
 export const authService = {
-    
-    // Función para Registrarse
-    register: async (email, password) => {
-        const response = await api.post('/auth/register', { email, password });
-        // Si Java nos devuelve el token, lo guardamos en la caja fuerte del navegador
-        if (response.data.token) {
-            localStorage.setItem('token', response.data.token);
-        }
-        return response.data;
-    },
-
-    // Función para Iniciar Sesión
     login: async (email, password) => {
         const response = await api.post('/auth/login', { email, password });
-        if (response.data.token) {
-            localStorage.setItem('token', response.data.token);
-        }
         return response.data;
     },
-
-    // Función para Cerrar Sesión (Simplemente destruimos el token)
+    register: async (userData) => {
+        const response = await api.post('/auth/register', userData);
+        return response.data;
+    },
     logout: () => {
-        localStorage.removeItem('token');
+        // Al estar en HttpOnly, no podemos borrar la cookie desde JS.
+        // En producción, llamaríamos a un endpoint backend /auth/logout para que la destruya.
+        // Por ahora, recargamos la página para limpiar la RAM.
+        window.location.href = '/login';
     }
-}
+};

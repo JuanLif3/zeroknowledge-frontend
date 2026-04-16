@@ -1,60 +1,63 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
+import { ShieldCheck, AlertTriangle } from 'lucide-react';
 
 const Login = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
     const navigate = useNavigate();
+    const [formData, setFormData] = useState({ email: '', password: '' });
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setIsLoading(true);
+
         try {
-            // LLamamos a nuestro puente HTTP (Axios)
-            await authService.login(email, password);
-            // SI funciona, java nos dio el JWT y ya esta en localStorage
-            // Redirigimos a la boveda 
-            alert('Login exitoso! Redirigiendo a la bóveda...');
+            await authService.login(formData.email, formData.password);
+            // Al ser exitoso, la Cookie se guarda sola. Vamos a la bóveda.
             navigate('/vault');
         } catch (err) {
-            setError('Credenciales inválidas. Intenta de nuevo.');
+            // Intentamos leer el mensaje exacto que nos mandó Java
+            const backendMessage = err.response?.data?.message || err.response?.data?.error;
+            setError(backendMessage || "Credenciales incorrectas. Verifica tu usuario y contraseña.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    return(
+    return (
         <div className="auth-container">
             <div className="auth-box">
-                <h2>ZK-Vault Login</h2>
-                {error && <div className="error-msg">{error}</div>}
-                
-                <form onSubmit={handleSubmit}>
-                    <div className="input-group">
-                        <label>Email Cifrado</label>
-                        <input 
-                            type="email" 
-                            required 
-                            value={email} 
-                            onChange={(e) => setEmail(e.target.value)} 
-                            placeholder="admin@cybersec.com"
-                        />
+                <div className="auth-header">
+                    <ShieldCheck size={48} color="#10b981" />
+                    <h2>Identificación Requerida</h2>
+                    <p>Ingresa a tu entorno Zero-Knowledge</p>
+                </div>
+
+                {error && (
+                    <div className="error-banner pulse-red" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', padding: '1rem', color: '#ef4444', marginBottom: '1.5rem', display: 'flex', gap: '0.5rem', alignItems: 'flex-start', fontSize: '0.85rem' }}>
+                        <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+                        <span>{error}</span>
                     </div>
-                    <div className="input-group">
-                        <label>Master Password</label>
-                        <input 
-                            type="password" 
-                            required 
-                            value={password} 
-                            onChange={(e) => setPassword(e.target.value)} 
-                            placeholder="••••••••"
-                        />
+                )}
+
+                <form onSubmit={handleSubmit} className="auth-form">
+                    <div className="form-group">
+                        <input type="email" placeholder="Correo Electrónico" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                     </div>
-                    <button type="submit">Desencriptar Bóveda</button>
+                    <div className="form-group">
+                        <input type="password" placeholder="Contraseña de Acceso" required value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
+                    </div>
+                    
+                    <button type="submit" disabled={isLoading} className={isLoading ? 'loading' : ''}>
+                        {isLoading ? 'Autenticando...' : 'Iniciar Sesión'}
+                    </button>
                 </form>
 
-                <div className="auth-link">
-                    ¿No tienes una bóveda? <Link to="/register">Crear una aquí</Link>
+                <div className="auth-footer">
+                    <p>¿No tienes autorización? <Link to="/register">Solicitar Acceso</Link></p>
                 </div>
             </div>
         </div>
