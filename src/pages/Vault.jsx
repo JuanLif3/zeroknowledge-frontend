@@ -10,6 +10,7 @@ import { Database, KeySquare, ShieldCheck, Link2, Radar, LogOut, PlusSquare, Shi
 const Vault = () => {
     const navigate = useNavigate();
     const [items, setItems] = useState([]);
+    const [intrusions, setIntrusions] = useState([]);
     const [masterKey, setMasterKey] = useState('');
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [activeTab, setActiveTab] = useState('caja');
@@ -43,6 +44,8 @@ const Vault = () => {
         try {
             const data = await vaultService.getMyVault();
             setItems(data);
+            const logs = await vaultService.getIntrusions(); 
+            setIntrusions(logs); 
         } catch (error) {
             if (error.response?.status === 403) navigate('/login');
         }
@@ -171,6 +174,16 @@ const Vault = () => {
     const copySecretLink = () => {
         navigator.clipboard.writeText(secretLink);
         alert("¡Link copiado! Envíalo por un chat seguro.");
+    };
+
+    const handleSimulateIntrusion = async (itemId) => {
+        try {
+            await vaultService.triggerIntrusion(itemId);
+            const updatedLogs = await vaultService.getIntrusions();
+            setIntrusions(updatedLogs); // Actualiza el radar en tiempo real
+        } catch (error) {
+            console.error("Error disparando la trampa", error);
+        }
     };
 
     const renderContent = () => {
@@ -391,16 +404,21 @@ const Vault = () => {
                 );
                 case 'radar': 
                 const honeytokens = items.filter(i => i.honeytoken);
+                const isUnderAttack = intrusions.length > 0;
+                
                 return (
-                    <div className="tab-content radar-dashboard">
+                    <div className={`tab-content radar-dashboard ${isUnderAttack ? 'under-attack' : ''}`}>
                         <div className="radar-header">
                             <div className="radar-display">
                                 <div className="radar-sweep"></div>
                                 <div className="radar-center"></div>
                             </div>
                             <div className="radar-info">
-                                <h2 className="icon-heading"><Radar size={28}/> Red de Señuelos (Honeytokens)</h2>
-                                <p>Monitoreo activo de credenciales trampa. Si un atacante usa estas llaves, se disparará una alerta de intrusión.</p>
+                                <h2 className="icon-heading">
+                                    <Radar size={28} className={isUnderAttack ? 'pulse-red' : ''}/> 
+                                    {isUnderAttack ? '¡INTRUSIÓN DETECTADA!' : 'Red de Señuelos (Honeytokens)'}
+                                </h2>
+                                <p>{isUnderAttack ? 'ALERTA: Se han detectado accesos no autorizados usando credenciales señuelo.' : 'Monitoreo activo de credenciales trampa. Todo despejado.'}</p>
                                 <div className="sensor-count">
                                     <span className="count-number">{honeytokens.length}</span>
                                     <span className="count-label">SENSORES ACTIVOS</span>
@@ -408,36 +426,49 @@ const Vault = () => {
                             </div>
                         </div>
 
+                        {/* LISTA DE ALERTAS (Solo aparece si hay ataques) */}
+                        {isUnderAttack && (
+                            <div className="alerts-panel" style={{marginBottom: '3rem', border: '1px solid #ef4444', padding: '2rem', background: 'rgba(239, 68, 68, 0.05)'}}>
+                                <h3 style={{color: '#ef4444', marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem'}}><AlertTriangle size={20}/> REGISTRO DE AMENAZAS</h3>
+                                <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem', fontFamily: 'monospace', fontSize: '0.8rem', color: '#ffb3b3'}}>
+                                    {intrusions.map((log, i) => (
+                                        <div key={i} style={{display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(239, 68, 68, 0.2)', paddingBottom: '0.5rem'}}>
+                                            <span>[SEÑUELO ID: {log.vaultItemId}]</span>
+                                            <span>IP ORIGEN: {log.ipAddress}</span>
+                                            {/* Manejo de fecha compatible con Java */}
+                                            <span>{new Date(Array.isArray(log.attemptedAt) ? Date.UTC(log.attemptedAt[0], log.attemptedAt[1]-1, log.attemptedAt[2], log.attemptedAt[3], log.attemptedAt[4], log.attemptedAt[5]) : log.attemptedAt).toLocaleString()}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="honeytoken-list">
                             <h3>/// CUADRÍCULA DE MONITOREO</h3>
-                            {honeytokens.length === 0 ? (
-                                <div className="empty-radar">
-                                    <ShieldAlert size={32} color="#f59e0b" style={{marginBottom: '1rem'}}/>
-                                    <p>No tienes ningún señuelo activo. Activa la casilla "HONEYTOKEN" al crear un nuevo registro para desplegar un sensor.</p>
-                                </div>
-                            ) : (
-                                <div className="sensor-grid">
-                                    {honeytokens.map(item => {
-                                        const decTitle = decryptData(item.encryptedTitle, masterKey);
-                                        return (
-                                            <div key={item.id} className="sensor-card">
-                                                <div className="sensor-header">
-                                                    <div className="status-indicator blinking"></div>
-                                                    <h4>{decTitle}</h4>
-                                                </div>
-                                                <div className="sensor-details">
-                                                    <p><strong>ESTADO:</strong> <span style={{color: '#10b981'}}>VIGILANDO</span></p>
-                                                    <p><strong>ÚLTIMO PING:</strong> {new Date().toLocaleTimeString()}</p>
-                                                    <p><strong>AMENAZAS:</strong> 0 DETECTADAS</p>
-                                                </div>
-                                                <button className="simulate-btn" onClick={() => alert(`Simulando alerta para ${decTitle}. En producción, esto enviaría un webhook al SOC.`)}>
-                                                    Simular Intrusión
-                                                </button>
+                            <div className="sensor-grid">
+                                {honeytokens.map(item => {
+                                    const decTitle = decryptData(item.encryptedTitle, masterKey);
+                                    // Contamos cuántas veces han atacado este señuelo en específico
+                                    const attacksOnThis = intrusions.filter(log => log.vaultItemId === item.id).length;
+                                    const compromised = attacksOnThis > 0;
+
+                                    return (
+                                        <div key={item.id} className="sensor-card" style={compromised ? {borderColor: '#ef4444', background: 'rgba(239, 68, 68, 0.02)'} : {}}>
+                                            <div className="sensor-header" style={compromised ? {borderBottomColor: '#ef4444'} : {}}>
+                                                <div className={`status-indicator ${compromised ? 'pulse-red' : 'blinking'}`} style={compromised ? {background: '#ef4444', boxShadow: '0 0 10px #ef4444'} : {}}></div>
+                                                <h4 style={compromised ? {color: '#ef4444'} : {}}>{decTitle}</h4>
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
+                                            <div className="sensor-details">
+                                                <p><strong>ESTADO:</strong> <span style={{color: compromised ? '#ef4444' : '#10b981'}}>{compromised ? 'COMPROMETIDO' : 'VIGILANDO'}</span></p>
+                                                <p><strong>AMENAZAS:</strong> <span style={compromised ? {color: '#ef4444', fontWeight: 'bold'} : {}}>{attacksOnThis} DETECTADAS</span></p>
+                                            </div>
+                                            <button className="simulate-btn" onClick={() => handleSimulateIntrusion(item.id)} style={compromised ? {borderColor: '#ef4444', color: '#ef4444'} : {}}>
+                                                Simular Intrusión
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
                 );

@@ -281,6 +281,21 @@
   50% { opacity: 0.3; }
 }
 
+// MODO ALERTA ROJA PARA EL RADAR
+.radar-dashboard.under-attack {
+  .radar-display {
+    border-color: #ef4444; background: rgba(239, 68, 68, 0.05); box-shadow: 0 0 30px rgba(239, 68, 68, 0.2);
+    &::before, &::after { background: rgba(239, 68, 68, 0.3); }
+    .radar-center { background: #ef4444; box-shadow: 0 0 15px #ef4444; }
+    .radar-sweep { background: linear-gradient(45deg, rgba(239, 68, 68, 0.6) 0%, transparent 50%); animation: sweep 2s infinite linear; } // Gira más rápido
+  }
+  .radar-info h2, .radar-info .count-number, .radar-info .count-label { color: #ef4444; }
+  .sensor-count { border-color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+}
+
+.pulse-red { animation: pulseRed 1s infinite alternate; }
+@keyframes pulseRed { from { opacity: 1; transform: scale(1); } to { opacity: 0.5; transform: scale(1.1); } }
+
 // ==========================================
 // CLASES AUXILIARES GLOBALES
 // ==========================================

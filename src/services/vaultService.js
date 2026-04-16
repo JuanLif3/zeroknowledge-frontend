@@ -16,5 +16,16 @@ export const vaultService = {
             isHoneytoken
         });
         return response.data;
+    },
+
+    // * Disparar intrusión (Simular que un hacker usó la clave)
+    triggerIntrusion: async (id) => {
+        await api.post(`/vault/honeytokens/${id}/trap`);
+    },
+
+    // * Obtener los registros de ataques desde Java
+    getIntrusions: async () => {
+        const response = await api.get('/vault/intrusions');
+        return response.data;
     }
 };

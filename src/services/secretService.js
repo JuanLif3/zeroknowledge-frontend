@@ -15,5 +15,16 @@ export const secretService = {
     getSecret: async (id) => {
         const response = await api.get(`/public/secrets/${id}`);
         return response.data;
+    },
+
+    //  Disparar intrusión
+    triggerIntrusion: async (id) => {
+        await api.post(`/vault/honeytokens/${id}/trap`);
+    },
+
+    //  Obtener registros del radar
+    getIntrusions: async () => {
+        const response = await api.get('/vault/intrusions');
+        return response.data;
     }
 };
