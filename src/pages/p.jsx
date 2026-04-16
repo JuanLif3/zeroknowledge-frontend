@@ -5,7 +5,7 @@ import { secretService } from '../services/secretService';
 import { authService } from '../services/authService';
 import { initCrypto, encryptData, decryptData } from '../services/cryptoService';
 import PasswordGenerator from '../components/PasswordGenerator';
-import { Database, KeySquare, ShieldCheck, Link2, Radar, LogOut, PlusSquare, ShieldAlert, Lock, Unlock, CreditCard, StickyNote, Key, AlertTriangle, CheckCircle, XOctagon, Copy, Search, Star, Folder, Edit2, Trash2, Globe, Check } from 'lucide-react';
+import { Database, KeySquare, ShieldCheck, Link2, Radar, LogOut, PlusSquare, ShieldAlert, Lock, Unlock, CreditCard, StickyNote, Key, AlertTriangle, CheckCircle, XOctagon, Copy, Search, Star, Folder, Edit2, Trash2, Globe } from 'lucide-react';
 
 const Vault = () => {
     const navigate = useNavigate();
@@ -15,15 +15,12 @@ const Vault = () => {
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [activeTab, setActiveTab] = useState('caja');
 
+    // --- NUEVOS ESTADOS DE NAVEGACIÓN Y BÚSQUEDA ---
     const [searchQuery, setSearchQuery] = useState('');
     const [activeSidebarFolder, setActiveSidebarFolder] = useState('all'); 
     const [filterType, setFilterType] = useState('all'); 
 
-    // --- UX STATES (Nuevos) ---
-    const [isEditingPulse, setIsEditingPulse] = useState(false);
-    const [toasts, setToasts] = useState([]);
-    const [deleteConfirmId, setDeleteConfirmId] = useState(null);
-
+    // --- ESTADO UNIFICADO DEL FORMULARIO ---
     const initialFormState = {
         id: null, title: '', itemType: 'login', isHoneytoken: false,
         username: '', password: '', cardHolder: '', cardNumber: '', cardExpiry: '', cardCvv: '',
@@ -32,18 +29,12 @@ const Vault = () => {
     const [formData, setFormData] = useState(initialFormState);
     const [showGenerator, setShowGenerator] = useState(false);
 
+    // --- ESTADOS DE ENVÍO EFÍMERO ---
     const [secretMessage, setSecretMessage] = useState('');
     const [secretExpiry, setSecretExpiry] = useState(60);
     const [secretLink, setSecretLink] = useState('');
 
     useEffect(() => { initCrypto(); fetchVault(); }, []);
-
-    // --- SISTEMA DE TOASTS (Notificaciones Propias) ---
-    const showToast = (message, type = 'success') => {
-        const id = Date.now();
-        setToasts(prev => [...prev, { id, message, type }]);
-        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000); // Desaparece en 3s
-    };
 
     const fetchVault = async () => {
         try {
@@ -54,9 +45,10 @@ const Vault = () => {
         } catch (error) { if (error.response?.status === 403) navigate('/login'); }
     };
 
-    const handleUnlock = (e) => { e.preventDefault(); setIsUnlocked(true); showToast('Bóveda Desencriptada Exitosamente', 'success'); };
+    const handleUnlock = (e) => { e.preventDefault(); setIsUnlocked(true); };
     const handleLogout = () => { authService.logout(); navigate('/login'); };
 
+    // --- LÓGICA DE PROCESAMIENTO (Desencriptar una vez) ---
     const processedItems = items.map(item => {
         try {
             const decTitle = decryptData(item.encryptedTitle, masterKey);
@@ -65,9 +57,11 @@ const Vault = () => {
         } catch (e) { return { ...item, decTitle: 'ERROR', payload: { error: 'Datos corruptos' } }; }
     });
 
+    // Extraer carpetas únicas dinámicamente
     const userFolders = Array.from(new Set(processedItems.map(i => i.payload.folder).filter(f => f && f.trim() !== '')));
 
-    let filteredItems = processedItems.filter(item => {
+    // --- FILTROS CRUZADOS (Búsqueda + Carpeta + Tipo) ---
+    const filteredItems = processedItems.filter(item => {
         if (searchQuery && !item.decTitle.toLowerCase().includes(searchQuery.toLowerCase())) return false;
         if (activeSidebarFolder === 'favorites' && !item.payload.isFavorite) return false;
         if (activeSidebarFolder !== 'all' && activeSidebarFolder !== 'favorites' && item.payload.folder !== activeSidebarFolder) return false;
@@ -75,15 +69,13 @@ const Vault = () => {
         return true;
     });
 
-    // --- ORDENAR FAVORITOS PRIMERO ---
-    filteredItems.sort((a, b) => {
-        if (a.payload.isFavorite === b.payload.isFavorite) return 0;
-        return a.payload.isFavorite ? -1 : 1;
-    });
-
+    // --- GUARDAR O ACTUALIZAR ---
     const handleSave = async (e) => {
         e.preventDefault();
-        let payloadObj = { folder: formData.folder, url: formData.url, extraNotes: formData.extraNotes, isFavorite: formData.isFavorite };
+        let payloadObj = {
+            folder: formData.folder, url: formData.url, extraNotes: formData.extraNotes, isFavorite: formData.isFavorite
+        };
+        
         if (formData.itemType === 'login') { payloadObj.username = formData.username; payloadObj.password = formData.password; }
         else if (formData.itemType === 'tarjeta') { payloadObj.cardHolder = formData.cardHolder; payloadObj.cardNumber = formData.cardNumber; payloadObj.cardExpiry = formData.cardExpiry; payloadObj.cardCvv = formData.cardCvv; }
         else if (formData.itemType === 'nota') { payloadObj.noteContent = formData.noteContent; }
@@ -95,41 +87,39 @@ const Vault = () => {
         try {
             if (formData.id) {
                 await vaultService.updateVaultItem(formData.id, encTitle, formData.itemType, encPayload, formData.isHoneytoken);
-                showToast('Credencial Actualizada Correctamente', 'success');
             } else {
                 await vaultService.saveVaultItem(encTitle, formData.itemType, encPayload, formData.isHoneytoken);
-                showToast('Nueva Credencial Almacenada', 'success');
             }
-            setFormData(initialFormState);
+            setFormData(initialFormState); // Limpiar
             fetchVault();
-        } catch (error) { showToast('Error de Cifrado o Guardado', 'error'); }
+        } catch (error) { alert("Error al guardar"); }
     };
 
+    // --- CARGAR EN FORMULARIO PARA EDITAR ---
     const handleEdit = (item) => {
         setFormData({
             id: item.id, title: item.decTitle, itemType: item.itemType, isHoneytoken: item.honeytoken,
             username: item.payload.username || '', password: item.payload.password || '',
             cardHolder: item.payload.cardHolder || '', cardNumber: item.payload.cardNumber || '', cardExpiry: item.payload.cardExpiry || '', cardCvv: item.payload.cardCvv || '',
-            noteContent: item.payload.noteContent || '', folder: item.payload.folder || '', url: item.payload.url || '', extraNotes: item.payload.extraNotes || '', isFavorite: item.payload.isFavorite || false
+            noteContent: item.payload.noteContent || '',
+            folder: item.payload.folder || '', url: item.payload.url || '', extraNotes: item.payload.extraNotes || '',
+            isFavorite: item.payload.isFavorite || false
         });
-        // Scroll hacia arriba y animación visual
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        setIsEditingPulse(true);
-        setTimeout(() => setIsEditingPulse(false), 1200);
     };
 
-    // Confirmación customizada con modal
-    const executeDelete = async () => {
-        if (!deleteConfirmId) return;
-        try {
-            await vaultService.deleteVaultItem(deleteConfirmId);
-            if (formData.id === deleteConfirmId) setFormData(initialFormState);
-            fetchVault();
-            showToast('Registro Purgado del Sistema', 'info');
-        } catch (error) { showToast('Error al eliminar', 'error'); }
-        setDeleteConfirmId(null);
+    // --- ELIMINAR ---
+    const handleDelete = async (id) => {
+        if (window.confirm("¿Estás seguro de que deseas purgar esta credencial? Esta acción es irreversible.")) {
+            try {
+                await vaultService.deleteVaultItem(id);
+                if (formData.id === id) setFormData(initialFormState);
+                fetchVault();
+            } catch (error) { alert("Error al eliminar"); }
+        }
     };
 
+    // --- FAVORITO RÁPIDO ---
     const toggleFavoriteFast = async (item) => {
         const newPayload = { ...item.payload, isFavorite: !item.payload.isFavorite };
         const encTitle = encryptData(item.decTitle, masterKey);
@@ -137,42 +127,27 @@ const Vault = () => {
         try {
             await vaultService.updateVaultItem(item.id, encTitle, item.itemType, encPayload, item.honeytoken);
             fetchVault();
-            showToast(newPayload.isFavorite ? 'Agregado a Favoritos' : 'Removido de Favoritos', 'success');
-        } catch (e) { showToast('Error al actualizar favorito', 'error'); }
+        } catch (e) { alert("Error al actualizar favorito"); }
     };
 
-    // --- MOTOR DE AUDITORÍA ZERO-KNOWLEDGE ---
+    // --- MOTOR DE AUDITORÍA ---
     const runAudit = () => {
-        // Filtramos solo los que son logins y se pudieron desencriptar bien
         const logins = processedItems.filter(i => i.itemType === 'login' && !i.payload.error);
         let weakCount = 0; let reusedCount = 0; const passMap = {}; const vulnerabilities = [];
 
         logins.forEach(item => {
             const pass = item.payload.password;
-            if (!pass) return; // Si la contraseña está vacía, la ignoramos
-            
-            // Detectar Débiles (Menos de 10 chars, o sin números/símbolos especiales)
+            if (!pass) return;
             const isWeak = pass.length < 10 || !/[0-9]/.test(pass) || !/[!@#$%^&*]/.test(pass);
-            if (isWeak) { 
-                weakCount++; 
-                vulnerabilities.push({ title: item.decTitle, issue: 'Contraseña Débil (Baja Entropía)' }); 
-            }
-            
-            // Mapear para detectar Reutilizadas
-            if (passMap[pass]) { 
-                passMap[pass].count++; 
-                passMap[pass].titles.push(item.decTitle); 
-            } else { 
-                passMap[pass] = { count: 1, titles: [item.decTitle] }; 
-            }
+            if (isWeak) { weakCount++; vulnerabilities.push({ title: item.decTitle, issue: 'Contraseña Débil (Baja Entropía)' }); }
+            if (passMap[pass]) { passMap[pass].count++; passMap[pass].titles.push(item.decTitle); } 
+            else { passMap[pass] = { count: 1, titles: [item.decTitle] }; }
         });
 
-        // Contabilizar las reutilizadas
         Object.values(passMap).forEach(group => {
             if (group.count > 1) {
                 reusedCount += group.count;
                 group.titles.forEach(t => {
-                    // Evitar duplicados en la lista visual
                     if (!vulnerabilities.find(v => v.title === t && v.issue === 'Contraseña Reutilizada')) {
                         vulnerabilities.push({ title: t, issue: 'Contraseña Reutilizada' });
                     }
@@ -180,56 +155,52 @@ const Vault = () => {
             }
         });
 
-        // Calcular Score
         let score = 100;
         if (logins.length > 0) {
             const penalties = (weakCount * 15) + (reusedCount * 20);
             score = Math.max(0, 100 - (penalties / logins.length));
-        } else { 
-            score = 0; 
-        }
+        } else { score = 0; }
 
         return { total: logins.length, weakCount, reusedCount, score: Math.round(score), vulnerabilities };
     };
 
-    // --- GENERAR LINK EFÍMERO (SEND) ---
+    // --- GENERAR LINK EFÍMERO ---
     const handleGenerateSecretLink = async (e) => {
         e.preventDefault();
-        if (!secretMessage) return showToast("Escribe un secreto primero", "error");
+        if (!secretMessage) return alert("Escribe un secreto primero");
         try {
             const randomArray = new Uint32Array(4);
             window.crypto.getRandomValues(randomArray);
             const temporaryKey = Array.from(randomArray, dec => dec.toString(16)).join('');
             const encryptedMessage = encryptData(secretMessage, temporaryKey);
-            
             const secretId = await secretService.createSecret(encryptedMessage, secretExpiry);
             const link = `${window.location.origin}/share/${secretId}#${temporaryKey}`;
-            
             setSecretLink(link);
             setSecretMessage('');
-            showToast("Enlace Cifrado Generado", "success");
-        } catch (error) { 
-            showToast("Error al generar el link seguro.", "error"); 
-        }
+        } catch (error) { alert("Error al generar el link seguro."); }
+    };
+    const copySecretLink = () => { navigator.clipboard.writeText(secretLink); alert("¡Link copiado!"); };
+
+    // --- DISPARAR RADAR ---
+    const handleSimulateIntrusion = async (itemId) => {
+        try {
+            await vaultService.triggerIntrusion(itemId);
+            const updatedLogs = await vaultService.getIntrusions();
+            setIntrusions(updatedLogs);
+        } catch (error) { console.error("Error disparando la trampa", error); }
     };
 
-    const copySecretLink = () => {
-        navigator.clipboard.writeText(secretLink);
-        showToast("¡Link copiado al portapapeles!", "success");
-    };
-
-    const handleSimulateIntrusion = async (itemId) => { await vaultService.triggerIntrusion(itemId); fetchVault(); showToast('ALERTA: Intrusión Simulada', 'error'); };
-
+    // ==========================================
+    // RENDERIZADO PRINCIPAL
+    // ==========================================
     const renderContent = () => {
         switch (activeTab) {
             case 'caja':
                 return (
                     <div className="tab-content caja-split-layout">
-                        {/* FORMULARIO CON ANIMACIÓN DE EDICIÓN */}
-                        <div className={`add-item-card ${isEditingPulse ? 'pulse-edit' : ''}`}>
-                            <h3 className="icon-heading" style={{ color: formData.id ? '#f59e0b' : 'white' }}>
-                                {formData.id ? <><Edit2 size={18}/> Modo Edición Activo</> : <><PlusSquare size={18} /> Nueva Entrada</>}
-                            </h3>
+                        {/* PANEL IZQUIERDO: FORMULARIO */}
+                        <div className="add-item-card">
+                            <h3 className="icon-heading"><PlusSquare size={18} /> {formData.id ? 'Editar Credencial' : 'Nueva Entrada'}</h3>
                             
                             <div className="type-selector">
                                 <button type="button" className={formData.itemType === 'login' ? 'active' : ''} onClick={() => setFormData({...formData, itemType: 'login'})}><Key size={16} /> Login</button>
@@ -239,10 +210,13 @@ const Vault = () => {
 
                             <form onSubmit={handleSave}>
                                 <input type="text" placeholder="TÍTULO (Ej: Netflix, Visa)" required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
-                                <input type="text" list="user-folders" placeholder="CARPETA (Crea una o elige de la lista)" value={formData.folder} onChange={e => setFormData({...formData, folder: e.target.value})} />
+                                
+                                <input type="text" list="user-folders" placeholder="CARPETA (Opcional)" value={formData.folder} onChange={e => setFormData({...formData, folder: e.target.value})} />
                                 <datalist id="user-folders">{userFolders.map(f => <option key={f} value={f} />)}</datalist>
 
-                                {formData.itemType !== 'nota' && <input type="text" placeholder="URL VINCULADA (Ej: https://...)" value={formData.url} onChange={e => setFormData({...formData, url: e.target.value})} />}
+                                {formData.itemType !== 'nota' && (
+                                    <input type="text" placeholder="URL VINCULADA (Ej: https://...)" value={formData.url} onChange={e => setFormData({...formData, url: e.target.value})} />
+                                )}
 
                                 {formData.itemType === 'login' && (
                                     <>
@@ -273,22 +247,28 @@ const Vault = () => {
                                 )}
 
                                 <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem'}}>
-                                    <label className="honeytoken-label" style={{margin: 0}}><input type="checkbox" checked={formData.isHoneytoken} onChange={e => setFormData({...formData, isHoneytoken: e.target.checked})} /> <ShieldAlert size={14} /> HONEYTOKEN</label>
-                                    <label style={{color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px'}}><input type="checkbox" checked={formData.isFavorite} onChange={e => setFormData({...formData, isFavorite: e.target.checked})} /> <Star size={14} fill={formData.isFavorite ? '#f59e0b' : 'none'}/> FAVORITO</label>
+                                    <label className="honeytoken-label" style={{margin: 0}}>
+                                        <input type="checkbox" checked={formData.isHoneytoken} onChange={e => setFormData({...formData, isHoneytoken: e.target.checked})} />
+                                        <ShieldAlert size={14} /> HONEYTOKEN
+                                    </label>
+                                    <label style={{color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px'}}>
+                                        <input type="checkbox" checked={formData.isFavorite} onChange={e => setFormData({...formData, isFavorite: e.target.checked})} />
+                                        <Star size={14} fill={formData.isFavorite ? '#f59e0b' : 'none'}/> FAVORITO
+                                    </label>
                                 </div>
 
                                 <div style={{display: 'flex', gap: '1rem'}}>
                                     {formData.id && <button type="button" onClick={() => setFormData(initialFormState)} style={{flex: 1, background: 'transparent', color: 'white', border: '1px solid #333'}}>Cancelar</button>}
-                                    <button type="submit" style={{flex: 2, background: formData.id ? '#f59e0b' : 'white', borderColor: formData.id ? '#f59e0b' : 'white'}}>{formData.id ? 'Guardar Cambios' : 'Cifrar y Almacenar'}</button>
+                                    <button type="submit" style={{flex: 2}}>{formData.id ? 'Guardar Cambios' : 'Cifrar y Almacenar'}</button>
                                 </div>
                             </form>
                         </div>
 
-                        {/* LISTA Y BÚSQUEDA REDISEÑADA */}
+                        {/* PANEL DERECHO: LISTA Y BÚSQUEDA */}
                         <div className="items-list-container">
                             <div className="search-bar" style={{marginBottom: '2rem', position: 'relative'}}>
                                 <Search size={18} style={{position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#888'}}/>
-                                <input type="text" placeholder="Buscar credencial..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{width: '100%', padding: '1rem 1rem 1rem 3rem', background: '#050505', border: '1px solid #1a1a1a', color: 'white', fontFamily: 'monospace'}} />
+                                <input type="text" placeholder="Buscar en la bóveda..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{width: '100%', padding: '1rem 1rem 1rem 3rem', background: '#050505', border: '1px solid #1a1a1a', color: 'white', fontFamily: 'monospace'}} />
                             </div>
 
                             <div className="vault-filters">
@@ -303,14 +283,18 @@ const Vault = () => {
                                 
                                 {filteredItems.map(item => (
                                     <div key={item.id} className={`vault-item ${item.honeytoken ? 'honeytoken' : ''}`}>
-                                        <div className="item-header" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                        <div className="item-header" style={{display: 'flex', justifyContent: 'space-between'}}>
                                             <div style={{display: 'flex', alignItems: 'center', gap: '0.7rem'}}>
                                                 {item.itemType === 'login' && <Key size={16} className="item-icon" />}
                                                 {item.itemType === 'tarjeta' && <CreditCard size={16} className="item-icon" />}
                                                 {item.itemType === 'nota' && <StickyNote size={16} className="item-icon" />}
                                                 <h4>{item.decTitle}</h4>
                                             </div>
-                                            {item.payload.isFavorite && <Star size={14} fill="#f59e0b" color="#f59e0b" style={{ marginTop: '20px' }} />}
+                                            <div className="item-actions" style={{display: 'flex', gap: '0.5rem'}}>
+                                                <button onClick={() => toggleFavoriteFast(item)} style={{background: 'none', border: 'none', color: item.payload.isFavorite ? '#f59e0b' : '#333', cursor: 'pointer'}}><Star size={16} fill={item.payload.isFavorite ? '#f59e0b' : 'none'}/></button>
+                                                <button onClick={() => handleEdit(item)} style={{background: 'none', border: 'none', color: '#888', cursor: 'pointer'}}><Edit2 size={16}/></button>
+                                                <button onClick={() => handleDelete(item.id)} style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer'}}><Trash2 size={16}/></button>
+                                            </div>
                                         </div>
 
                                         <div className="item-details">
@@ -322,15 +306,9 @@ const Vault = () => {
                                             {item.itemType === 'login' && (<><p><strong>USR:</strong> {item.payload.username}</p><p className="blur-text"><strong>KEY:</strong> {item.payload.password}</p></>)}
                                             {item.itemType === 'tarjeta' && (<><p><strong>NÚM:</strong> {item.payload.cardNumber}</p><p><strong>VENCE:</strong> {item.payload.cardExpiry}</p><p className="blur-text"><strong>CVV:</strong> {item.payload.cardCvv}</p></>)}
                                             {item.itemType === 'nota' && (<p className="blur-text"><strong>TXT:</strong> {item.payload.noteContent}</p>)}
+                                            
+                                            {item.payload.extraNotes && (<p style={{marginTop: '1rem', color: '#666'}}><i>Nota: {item.payload.extraNotes}</i></p>)}
                                         </div>
-
-                                        {/* NUEVO DISEÑO DE BOTONES EN LA PARTE INFERIOR */}
-                                        <div className="item-actions-bottom">
-                                            <button className={`btn-fav ${item.payload.isFavorite ? 'is-fav' : ''}`} onClick={() => toggleFavoriteFast(item)}><Star size={14}/> Fav</button>
-                                            <button className="btn-edit" onClick={() => handleEdit(item)}><Edit2 size={14}/> Editar</button>
-                                            <button className="btn-del" onClick={() => setDeleteConfirmId(item.id)}><Trash2 size={14}/> Purga</button>
-                                        </div>
-
                                         {item.honeytoken && <span className="badge"><ShieldAlert size={12} style={{marginRight: '4px'}}/> TRAMPA</span>}
                                     </div>
                                 ))}
@@ -338,6 +316,7 @@ const Vault = () => {
                         </div>
                     </div>
                 );
+
             case 'generador': 
                 return <div className="tab-content"><PasswordGenerator /></div>;
 

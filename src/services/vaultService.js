@@ -27,5 +27,18 @@ export const vaultService = {
     getIntrusions: async () => {
         const response = await api.get('/vault/intrusions');
         return response.data;
+    },
+
+    // * FUNCIONES DE EDICIÓN Y ELIMINACIÓN 
+    updateVaultItem: async (id, encryptedTitle, itemType, encryptedPayload, isHoneytoken) => {
+        const response = await api.put(`/vault/${id}`, {
+            encryptedTitle, itemType, encryptedPayload, isHoneytoken
+        });
+        return response.data;
+    },
+
+    deleteVaultItem: async (id) => {
+        await api.delete(`/vault/${id}`);
     }
+    
 };

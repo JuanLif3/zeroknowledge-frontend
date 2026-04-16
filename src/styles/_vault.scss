@@ -81,7 +81,7 @@
               .toggle-gen-btn { background: transparent; color: #444; border: 1px solid $border-color; padding: 0 1.5rem; cursor: pointer; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; &:hover { background: white; color: black; border-color: white; } }
             }
 
-            .honeytoken-label { color: #444; display: flex; align-items: center; gap: 0.7rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: color 0.2s; margin-top: 1rem; &:hover { color: #f59e0b; } }
+            .honeytoken-label { color: #444; display: flex; align-items: center; gap: 0.7rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: color 0.2s; margin-top: 10rem; &:hover { color: #f59e0b; } }
             button[type="submit"] { background: white; color: black; padding: 1.5rem; border: none; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; margin-top: 1rem; transition: 0.2s; &:hover { background: transparent; color: white; border: 1px solid white; } }
           }
         }
@@ -115,6 +115,9 @@
               .item-header { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 1rem; border-bottom: 1px solid #111; padding-bottom: 1rem;
                 .item-icon { color: $text-muted; }
                 h4 { margin: 0; font-weight: 600; font-size: 1rem; letter-spacing: 1px; text-transform: uppercase; }
+                .fav-indicator {
+            margin-right: 1.5rem; /* Aumenta este valor para moverlo más a la izquierda */
+        }
               }
               
               .item-details p { color: $text-muted; margin: 0.5rem 0; font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; }
@@ -304,3 +307,52 @@
 .icon-btn-center { display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
 .copy-btn { display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
 .badge { display: flex; align-items: center; }
+
+
+.add-item-card.pulse-edit {
+  animation: pulseEditAnim 1s ease-out;
+}
+@keyframes pulseEditAnim {
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); border-color: #f59e0b; }
+  70% { box-shadow: 0 0 0 20px rgba(245, 158, 11, 0); border-color: #f59e0b; }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); border-color: $border-color; }
+}
+
+// Sistema de Notificaciones (Toasts)
+.toast-container {
+  position: fixed; bottom: 2rem; right: 2rem; z-index: 9999; display: flex; flex-direction: column; gap: 1rem;
+  .toast {
+    background: #050505; color: white; border: 1px solid #333; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideInRight 0.3s forwards;
+    &.success { border-left: 4px solid #10b981; }
+    &.error { border-left: 4px solid #ef4444; }
+    &.info { border-left: 4px solid #3b82f6; }
+  }
+}
+@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+// Modal de Confirmación (Eliminar)
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 10000; display: flex; justify-content: center; align-items: center;
+  .modal-box {
+    background: #0a0a0a; border: 1px solid #ef4444; padding: 3rem; max-width: 400px; text-align: center;
+    h3 { color: #ef4444; font-weight: 300; letter-spacing: 2px; margin-top: 0; margin-bottom: 1rem; text-transform: uppercase;}
+    p { color: #888; font-size: 0.85rem; margin-bottom: 2rem; line-height: 1.5; }
+    .modal-actions {
+      display: flex; gap: 1rem;
+      button { flex: 1; padding: 1rem; cursor: pointer; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; border: none; transition: 0.2s; }
+      .btn-cancel { background: transparent; color: white; border: 1px solid #333; &:hover { border-color: white; } }
+      .btn-danger { background: #ef4444; color: black; &:hover { background: #dc2626; color: white; } }
+    }
+  }
+}
+
+// Arreglo Visual de la Tarjeta (No más sobrelapamiento)
+.vault-item {
+  .item-actions-bottom {
+    display: flex; gap: 1rem; margin-top: 1.5rem; border-top: 1px solid #111; padding-top: 1rem; justify-content: flex-end;
+    button { background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s; }
+    .btn-fav { color: #666; &:hover, &.is-fav { color: #f59e0b; } }
+    .btn-edit { color: #666; &:hover { color: white; } }
+    .btn-del { color: #666; &:hover { color: #ef4444; } }
+  }
+}
