@@ -390,10 +390,55 @@ const Vault = () => {
                     </div>
                 );
                 case 'radar': 
+                const honeytokens = items.filter(i => i.isHoneytoken);
                 return (
-                    <div className="tab-content coming-soon">
-                        <h2 className="icon-heading"><Radar size={28}/> Monitoreo de Honeytokens</h2>
-                        <p>Escaneando registros de intrusión y uso de credenciales trampa...</p>
+                    <div className="tab-content radar-dashboard">
+                        <div className="radar-header">
+                            <div className="radar-display">
+                                <div className="radar-sweep"></div>
+                                <div className="radar-center"></div>
+                            </div>
+                            <div className="radar-info">
+                                <h2 className="icon-heading"><Radar size={28}/> Red de Señuelos (Honeytokens)</h2>
+                                <p>Monitoreo activo de credenciales trampa. Si un atacante usa estas llaves, se disparará una alerta de intrusión.</p>
+                                <div className="sensor-count">
+                                    <span className="count-number">{honeytokens.length}</span>
+                                    <span className="count-label">SENSORES ACTIVOS</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="honeytoken-list">
+                            <h3>/// CUADRÍCULA DE MONITOREO</h3>
+                            {honeytokens.length === 0 ? (
+                                <div className="empty-radar">
+                                    <ShieldAlert size={32} color="#f59e0b" style={{marginBottom: '1rem'}}/>
+                                    <p>No tienes ningún señuelo activo. Activa la casilla "HONEYTOKEN" al crear un nuevo registro para desplegar un sensor.</p>
+                                </div>
+                            ) : (
+                                <div className="sensor-grid">
+                                    {honeytokens.map(item => {
+                                        const decTitle = decryptData(item.encryptedTitle, masterKey);
+                                        return (
+                                            <div key={item.id} className="sensor-card">
+                                                <div className="sensor-header">
+                                                    <div className="status-indicator blinking"></div>
+                                                    <h4>{decTitle}</h4>
+                                                </div>
+                                                <div className="sensor-details">
+                                                    <p><strong>ESTADO:</strong> <span style={{color: '#10b981'}}>VIGILANDO</span></p>
+                                                    <p><strong>ÚLTIMO PING:</strong> {new Date().toLocaleTimeString()}</p>
+                                                    <p><strong>AMENAZAS:</strong> 0 DETECTADAS</p>
+                                                </div>
+                                                <button className="simulate-btn" onClick={() => alert(`Simulando alerta para ${decTitle}. En producción, esto enviaría un webhook al SOC.`)}>
+                                                    Simular Intrusión
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 );
             case 'configuracion': return <div className="tab-content coming-soon"><h2 className="icon-heading"><Settings size={28}/> Configuración</h2><p>Parámetros del sistema y rotación de llaves.</p></div>;

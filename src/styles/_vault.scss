@@ -215,6 +215,77 @@
       .gen-btn { width: 100%; background: transparent; color: white; border: 1px solid $border-color; padding: 1rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; &:hover { background: white; color: black; } }
     }
   }
+
+  // --- DASHBOARD DEL RADAR HONEYTOKEN ---
+      &.radar-dashboard {
+        max-width: 900px;
+        
+        .radar-header {
+          display: flex; gap: 3rem; align-items: center; margin-bottom: 4rem; border-bottom: 1px solid $border-color; padding-bottom: 3rem;
+          
+          // LA ANIMACIÓN DEL RADAR
+          .radar-display {
+            width: 120px; height: 120px; border: 1px solid #f59e0b; border-radius: 50%; position: relative; overflow: hidden; background: rgba(245, 158, 11, 0.05); box-shadow: 0 0 20px rgba(245, 158, 11, 0.1); flex-shrink: 0;
+            // Líneas de la cruz del radar
+            &::before { content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 1px; background: rgba(245, 158, 11, 0.3); }
+            &::after { content: ''; position: absolute; top: 0; left: 50%; width: 1px; height: 100%; background: rgba(245, 158, 11, 0.3); }
+            
+            .radar-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 4px; height: 4px; background: #f59e0b; border-radius: 50%; box-shadow: 0 0 10px #f59e0b; z-index: 2; }
+            
+            .radar-sweep {
+              position: absolute; top: 50%; left: 50%; width: 50%; height: 50%; background: linear-gradient(45deg, rgba(245, 158, 11, 0.5) 0%, transparent 50%);
+              transform-origin: 0% 0%; animation: sweep 4s infinite linear;
+            }
+          }
+
+          .radar-info {
+            h2 { margin-top: 0; font-weight: 300; text-transform: uppercase; letter-spacing: 3px; color: #f59e0b; }
+            p { color: $text-muted; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; line-height: 1.5; margin-bottom: 1.5rem; }
+            
+            .sensor-count {
+              display: inline-flex; align-items: center; gap: 1rem; border: 1px solid #f59e0b; padding: 0.5rem 1rem; background: rgba(245, 158, 11, 0.05);
+              .count-number { color: #f59e0b; font-size: 1.5rem; font-family: 'JetBrains Mono', monospace; font-weight: bold; }
+              .count-label { color: #f59e0b; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; }
+            }
+          }
+        }
+
+        .honeytoken-list {
+          h3 { font-weight: 300; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 2rem; color: $text-muted; font-size: 1rem; }
+          
+          .empty-radar { border: 1px dashed #f59e0b; padding: 4rem; text-align: center; color: #f59e0b; background: rgba(245, 158, 11, 0.02); p { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; } }
+
+          .sensor-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;
+            
+            .sensor-card {
+              border: 1px solid #333; padding: 1.5rem; background: $surface; transition: 0.2s; position: relative;
+              &:hover { border-color: #f59e0b; }
+              
+              .sensor-header {
+                display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; border-bottom: 1px solid #111; padding-bottom: 1rem;
+                .status-indicator { width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981; }
+                .status-indicator.blinking { animation: blink 2s infinite ease-in-out; }
+                h4 { margin: 0; text-transform: uppercase; letter-spacing: 1px; font-size: 1rem; }
+              }
+
+              .sensor-details p { margin: 0.5rem 0; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: $text-muted; }
+              
+              .simulate-btn { margin-top: 1.5rem; width: 100%; background: transparent; color: #f59e0b; border: 1px solid #f59e0b; padding: 0.8rem; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: 0.2s; &:hover { background: #f59e0b; color: black; } }
+            }
+          }
+        }
+      }
+
+// Animaciones Globales (Pon esto hasta el final del archivo _vault.scss, fuera de todas las llaves)
+@keyframes sweep {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
 }
 
 .icon-heading { display: flex; align-items: center; gap: 0.75rem; }
