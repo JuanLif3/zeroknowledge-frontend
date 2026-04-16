@@ -1,7 +1,6 @@
 import api from './api';
 
 export const vaultService = {
-    // * Obtener las credenciales (llegarán encriptadas)
     getMyVault: async () => {
         const response = await api.get('/vault');
         return response.data;

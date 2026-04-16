@@ -2,13 +2,13 @@ import api from './api';
 
 export const secretService = {
     // Generar el secreto en la base de datos
-    createSecret: async (encryptedMessage, minutesToLive) => {
-        // Fijate que usamos la ruta /public/secrets
-        const response = await api.post('/public/secrets', {
-            encryptedMessage,
-            minutesToLive
+    createSecret: async (encryptedMessage, expiresInMinutes, holdToReveal = false) => {
+        const response = await api.post('/secrets', { 
+            encryptedMessage, 
+            expiresInMinutes,
+            holdToReveal // Se lo pasamos a Spring Boot
         });
-        return response.data; // Java nos devuelve el ID (Ej: "abc-123-xyz")
+        return response.data.id;
     },
 
     // Obtener el secreto (y destruirlo en el proceso)

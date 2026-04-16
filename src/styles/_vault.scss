@@ -49,6 +49,25 @@
       }
     }
 
+    // NUEVO: Limitar altura de carpetas y añadir un mini-scroll elegante
+    .folders-nav {
+      max-height: 155px; /* Altura exacta para mostrar ~3 carpetas */
+      overflow-y: auto;
+      padding-right: 0.5rem;
+      
+      /* Scrollbar Ciberpunk solo para las carpetas */
+      &::-webkit-scrollbar {
+        width: 3px;
+      }
+      &::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+      }
+      &::-webkit-scrollbar-thumb {
+        background: #10b981;
+        border-radius: 4px;
+      }
+    }
+
     .logout-sidebar-btn {
       background: transparent; color: white; border: 1px solid #333; padding: 1.2rem; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 2px; cursor: pointer; transition: 0.2s;
       &:hover { border-color: #ef4444; color: #ef4444; }
@@ -361,3 +380,113 @@
 .icon-btn-center { display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
 .copy-btn { display: flex; justify-content: center; align-items: center; gap: 0.5rem; }
 .badge { display: flex; align-items: center; }
+
+
+// ==========================================
+// NUEVOS MODALES: DETALLES Y GESTOR DE CARPETAS
+// ==========================================
+
+@keyframes modalEntrance {
+  from { opacity: 0; transform: scale(0.95) translateY(15px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.item-detail-modal {
+  text-align: left !important;
+  max-width: 550px !important;
+  width: 100%;
+  background: #050505 !important;
+  border: 1px solid #1a1a1a !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(16, 185, 129, 0.1) !important;
+  position: relative;
+  overflow: hidden;
+  animation: modalEntrance 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 2.5rem !important;
+
+  // Línea láser superior
+  &::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+    background: linear-gradient(90deg, transparent, #10b981, transparent);
+  }
+
+  .detail-header {
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px dashed #222; padding-bottom: 1.5rem; margin-bottom: 2rem;
+    
+    h3 { 
+      margin: 0; color: white !important; font-size: 1.1rem; display: flex; align-items: center; gap: 1rem; letter-spacing: 1px;
+      .icon-wrapper { 
+        background: rgba(16, 185, 129, 0.1); padding: 0.6rem; 
+        border: 1px solid rgba(16,185,129,0.2); display: flex; align-items: center; justify-content: center;
+      }
+    }
+    
+    .close-btn { 
+      background: none; border: none; color: #666; cursor: pointer; transition: all 0.3s; 
+      &:hover { color: #ef4444; transform: rotate(90deg); } 
+    }
+  }
+
+  .detail-body {
+    display: flex; flex-direction: column; gap: 0.8rem;
+    
+    .detail-row {
+      display: flex; justify-content: space-between; align-items: center;
+      background: linear-gradient(90deg, rgba(255,255,255,0.01) 0%, transparent 100%);
+      border-left: 2px solid #222; padding: 1.2rem;
+      transition: all 0.2s ease;
+
+      // Efecto interactivo al pasar el ratón por la fila
+      &:hover {
+        border-left-color: #10b981;
+        background: linear-gradient(90deg, rgba(16, 185, 129, 0.05) 0%, transparent 100%);
+        .btn-copy { opacity: 1; border-color: #10b981; color: #10b981; }
+      }
+
+      .detail-content {
+        display: flex; flex-direction: column; gap: 0.4rem;
+        .detail-label { color: #555; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 2px; }
+        .detail-value { font-family: 'JetBrains Mono', monospace; color: #e5e5e5; font-size: 0.95rem; word-break: break-all; }
+        a.detail-value { color: #10b981; text-decoration: none; &:hover { text-decoration: underline; } }
+      }
+
+      .btn-copy { 
+        opacity: 0.3; background: transparent; border: 1px solid #333; padding: 0.6rem 1rem; color: #888; 
+        cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; 
+        text-transform: uppercase; font-size: 0.7rem; font-weight: bold; letter-spacing: 1px;
+        &:hover { background: #10b981; color: black !important; border-color: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); opacity: 1; } 
+      }
+    }
+  }
+}
+
+.folder-manager-modal {
+  text-align: left !important;
+  max-width: 450px !important;
+  width: 100%;
+  
+  .folder-list {
+    max-height: 300px; overflow-y: auto; margin-bottom: 2rem;
+    .folder-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0.8rem; border-bottom: 1px solid #222;
+      span { display: flex; align-items: center; gap: 0.5rem; font-family: monospace; }
+      .folder-actions button { background: none; border: none; cursor: pointer; margin-left: 0.5rem; color: #666; transition: 0.2s; }
+      .btn-edit:hover { color: #3b82f6; }
+      .btn-del:hover { color: #ef4444; }
+    }
+  }
+
+  .add-folder-form {
+    display: flex; gap: 0.5rem;
+    input { flex: 1; padding: 0.8rem; background: #050505; border: 1px solid #333; color: white; }
+    button { background: white; color: black; border: none; padding: 0 1.5rem; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 0.8rem; transition: 0.2s; &:hover { background: #10b981; color: white; } }
+  }
+}
+
+// Estilo para el nuevo selector de carpetas (<select>)
+.folder-select-group {
+  display: flex; gap: 0.5rem;
+  select { flex: 1; padding: 0.8rem; background: #050505; border: 1px solid #333; color: white; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; cursor: pointer; outline: none; &:focus { border-color: white; } }
+  .btn-manage-folders { background: #111; border: 1px solid #333; color: white; padding: 0 1rem; cursor: pointer; transition: 0.2s; &:hover { background: white; color: black; } }
+}
