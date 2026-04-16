@@ -5,15 +5,31 @@ const api = axios.create({
     withCredentials: true // Permite el envío automático de la Cookie HttpOnly
 });
 
-// INTERCEPTOR DE SEGURIDAD: Vigila todas las respuestas del servidor
+// INTERCEPTOR INTELIGENTE
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        // Si Java nos dice que no estamos autorizados (Cookie expirada o inválida)
+        console.error("🔍 API Error detectado:", error.response?.status, "en la ruta:", error.config?.url);
+
         if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-            // Limpiamos la vista y lo mandamos al login
-            if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-                window.location.href = '/login';
+            const requestUrl = error.config.url || '';
+            const currentPath = window.location.pathname;
+
+            // 1. REGLA DE ORO: Si estamos en la pantalla de lectura de secretos, NUNCA redirigir al login.
+            if (currentPath.startsWith('/share')) {
+                return Promise.reject(error);
+            }
+
+            // 2. Si el 403 ocurre al intentar CREAR un secreto, es un error del controlador de Java, NO de sesión.
+            if (requestUrl.includes('secret')) {
+                return Promise.reject(error);
+            }
+
+            // 3. Si ocurre al intentar leer la bóveda (/vault), entonces SÍ expiró la sesión. Al Login.
+            if (requestUrl.includes('/vault')) {
+                if (currentPath !== '/login' && currentPath !== '/register') {
+                    window.location.href = '/login';
+                }
             }
         }
         return Promise.reject(error);

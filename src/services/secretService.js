@@ -1,30 +1,19 @@
 import api from './api';
 
 export const secretService = {
-    // Generar el secreto en la base de datos
     createSecret: async (encryptedMessage, expiresInMinutes, holdToReveal = false) => {
-        const response = await api.post('/secrets', { 
+        // Asegúrate de que esta ruta '/shared-secrets' sea EXACTAMENTE la misma que tienes en tu SharedSecretController.java
+        const response = await api.post('/shared-secrets', { 
             encryptedMessage, 
             expiresInMinutes,
-            holdToReveal // Se lo pasamos a Spring Boot
+            holdToReveal
         });
-        return response.data.id;
+        return response.data.id || response.data;
     },
-
-    // Obtener el secreto (y destruirlo en el proceso)
+    
     getSecret: async (id) => {
-        const response = await api.get(`/public/secrets/${id}`);
-        return response.data;
-    },
-
-    //  Disparar intrusión
-    triggerIntrusion: async (id) => {
-        await api.post(`/vault/honeytokens/${id}/trap`);
-    },
-
-    //  Obtener registros del radar
-    getIntrusions: async () => {
-        const response = await api.get('/vault/intrusions');
+        // Lo mismo aquí
+        const response = await api.get(`/shared-secrets/${id}`);
         return response.data;
     }
 };
