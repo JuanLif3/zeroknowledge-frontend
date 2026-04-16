@@ -14,7 +14,7 @@ export const encryptData = (text, masterKey) => {
     // Esto hace que el cifrado sea computacionalmente "pesado" e inmune a la fuerza bruta.
     const key = CryptoJS.PBKDF2(masterKey, salt, {
         keySize: 256 / 32,
-        iterations: 100000
+        iterations: 10000
     });
 
     // Generar un Vector de Inicialización (IV) aleatorio
@@ -51,7 +51,7 @@ export const decryptData = (encryptedPackage, masterKey) => {
         // Derivar exactamente la MISMA llave usando el Salt que guardamos
         const key = CryptoJS.PBKDF2(masterKey, salt, {
             keySize: 256 / 32,
-            iterations: 100000
+            iterations: 10000
         });
 
         // Desencriptar
