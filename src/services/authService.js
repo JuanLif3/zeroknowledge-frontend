@@ -1,25 +1,27 @@
 import api from './api';
 
 export const authService = {
-    // LOGIN
+    // LOGIN: Recibe email y password por separado
     login: async (email, password) => {
         const response = await api.post('/auth/login', { 
             email: email, 
-            authHash: password // <-- Traducimos 'password' a 'authHash' para el backend
+            authHash: password // Traducción para el backend
         });
         return response.data;
     },
 
-    // REGISTRO
-    register: async (email, password) => {
+    // REGISTRO: Recibe el objeto formData completo desde Register.jsx
+    register: async (userData) => {
         const response = await api.post('/auth/register', { 
-            email: email, 
-            authHash: password // <-- Traducimos 'password' a 'authHash' para el backend
+            firstname: userData.firstname,
+            lastname: userData.lastname,
+            email: userData.email, 
+            authHash: userData.password // Traducción de la contraseña al formato seguro
         });
         return response.data;
     },
 
-    // LOGOUT (El que hicimos en la Fase 1)
+    // LOGOUT
     logout: async () => {
         await api.post('/auth/logout'); 
     }
