@@ -89,15 +89,32 @@ const Vault = () => {
             window.location.href = '/login'; 
         }
     };
+    
 
-    // CACHÉ EN RAM Y DESENCRIPTADO MÁGICO
+    // CACHÉ EN RAM Y DESENCRIPTADO MÁGICO (BLINDADO)
     const processedItems = useMemo(() => {
         return items.map(item => {
             try {
                 const decTitle = decryptData(item.encryptedTitle, masterKey);
-                const payload = JSON.parse(decryptData(item.encryptedPayload, masterKey));
+                const decPayloadStr = decryptData(item.encryptedPayload, masterKey);
+                
+                // 1er Filtro: Si la llave es incorrecta o el dato es viejo
+                if (decTitle === "/// ACCESO DENEGADO ///" || decPayloadStr === "/// ACCESO DENEGADO ///") {
+                    return { 
+                        ...item, 
+                        decTitle: 'CORRUPTO / LLAVE INVÁLIDA', 
+                        payload: { error: true, folder: '' } 
+                    };
+                }
+
+                // 2do Filtro: Si el descifrado funcionó, lo convertimos a JSON
+                const payload = JSON.parse(decPayloadStr);
                 return { ...item, decTitle, payload };
-            } catch (e) { return { ...item, decTitle: 'ERROR', payload: { error: 'Datos corruptos' } }; }
+
+            } catch (e) { 
+                // 3er Filtro: Si el JSON estaba roto
+                return { ...item, decTitle: 'ERROR DE LECTURA', payload: { error: true, folder: '' } }; 
+            }
         });
     }, [items, masterKey]);
 
