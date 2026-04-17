@@ -538,7 +538,7 @@ const Vault = () => {
     };
 
     return (
-        <div className="dashboard-layout">
+        <div className={`dashboard-layout ${isMobileMenuOpen ? 'menu-active' : ''}`}>
             {/* SISTEMA DE TOASTS */}
             <div className="toast-container">
                 {toasts.map(t => (
@@ -711,66 +711,82 @@ const Vault = () => {
             )}
 
             {!isUnlocked ? (
-                /* TU PANTALLA DE DESBLOQUEO SE MANTIENE IGUAL */
-                <div className="unlock-overlay"><form onSubmit={handleUnlock} className="unlock-box"><Lock size={48} color="#fff" strokeWidth={1} style={{marginBottom: '1rem'}} /><h2>ZK-Vault</h2><p>Bóveda sellada. Requiere autenticación local.</p><input type="password" required value={masterKey} onChange={(e) => setMasterKey(e.target.value)} placeholder="Master Key" /><button type="submit" className="icon-btn-center"><Unlock size={18}/> Desencriptar</button></form></div>
+                /* PANTALLA DE DESBLOQUEO */
+                <div className="unlock-overlay">
+                    <form onSubmit={handleUnlock} className="unlock-box">
+                        <Lock size={48} color="#fff" strokeWidth={1} style={{marginBottom: '1rem'}} />
+                        <h2>ZK-Vault</h2>
+                        <p>Bóveda sellada. Requiere autenticación local.</p>
+                        <input type="password" required value={masterKey} onChange={(e) => setMasterKey(e.target.value)} placeholder="Master Key" />
+                        <button type="submit" className="icon-btn-center"><Unlock size={18}/> Desencriptar</button>
+                    </form>
+                </div>
             ) : (
                 <>
-                    {/* NUEVO: CABECERA MÓVIL (Solo visible en celulares) */}
-                    <div className="mobile-header">
-                        <div className="brand" style={{ margin: 0 }}>
-                            <h2 style={{ margin: 0, fontSize: '1.2rem', letterSpacing: '2px', textTransform: 'uppercase', fontWeight: 300 }}>ZK-Vault</h2>
+                    {/* CABECERA MÓVIL BLINDADA */}
+                    <header className="mobile-header">
+                        <div className="mobile-brand">
+                            <h2>ZK-Vault</h2>
                         </div>
                         <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-                            {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                         </button>
-                    </div>
+                    </header>
 
-                    {/* NUEVO: FONDO OSCURO CUANDO EL MENÚ ESTÁ ABIERTO EN MÓVIL */}
-                    {isMobileMenuOpen && <div className="sidebar-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>}
+                    {/* OVERLAY PARA CERRAR EL MENÚ AL TOCAR AFUERA */}
+                    <div className={`sidebar-overlay ${isMobileMenuOpen ? 'show' : ''}`} onClick={() => setIsMobileMenuOpen(false)}></div>
 
-                    {/* BARRA LATERAL (Con clase dinámica para abrir/cerrar) */}
+                    {/* SIDEBAR CORREGIDO */}
                     <aside className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
                         <div className="sidebar-inner">
-                        <div className="brand desktop-only">
-            <h2>ZK-Vault</h2>
-            <span className="status">Conexión Segura</span>
-        </div>
-                        
-                        <div className="nav-group">
-                            <span className="nav-label">/// MI BÓVEDA</span>
-                            <nav>
-                                <button className={activeTab === 'almacen' && activeSidebarFolder === 'all' ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('almacen', 'all')}><Database size={18} /> Almacén</button>
-                                <button className={activeTab === 'crear' ? 'active icon-btn' : 'icon-btn'} onClick={() => { handleNavClick('crear'); setFormData(initialFormState); }}><PlusSquare size={18} /> Crear Credencial</button>
-                            </nav>
-                        </div>
-
-                        {allFolders.length > 0 && (
+                            <div className="brand desktop-only">
+                                <h2>ZK-Vault</h2>
+                                <span className="status">Conexión Segura</span>
+                            </div>
+                            
                             <div className="nav-group">
-                                <span className="nav-label">/// CARPETAS</span>
-                                <nav className="folders-nav">
-                                    {allFolders.map(folder => (
-                                        <button key={folder} className={activeTab === 'almacen' && activeSidebarFolder === folder ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('almacen', folder)}>
-                                            <Folder size={18} /> {folder}
-                                        </button>
-                                    ))}
+                                <span className="nav-label">/// MI BÓVEDA</span>
+                                <nav>
+                                    <button className={activeTab === 'almacen' && activeSidebarFolder === 'all' ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('almacen', 'all')}>
+                                        <Database size={18} /> Almacén
+                                    </button>
+                                    <button className={activeTab === 'crear' ? 'active icon-btn' : 'icon-btn'} onClick={() => { handleNavClick('crear'); setFormData(initialFormState); }}>
+                                        <PlusSquare size={18} /> Crear Credencial
+                                    </button>
                                 </nav>
                             </div>
-                        )}
 
-                        <div className="nav-group">
-                            <span className="nav-label">/// ZERO_KNOWLEDGE</span>
-                            <nav>
-                                <button className={activeTab === 'generador' ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('generador')}><KeySquare size={18} /> Motor CSPRNG</button>
-                                <button className={activeTab === 'auditoria' ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('auditoria')}><ShieldCheck size={18} /> Auditoría Local</button>
-                                <button className={activeTab === 'send' ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('send')}><Link2 size={18} /> Envío Efímero</button>
-                                <button className={activeTab === 'radar' ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('radar')}><Radar size={18} /> Radar Honeytoken</button>
-                            </nav>
-                        </div>
-                        <button className="logout-sidebar-btn icon-btn-center" onClick={handleLogout}><LogOut size={16} /> Finalizar Sesión</button>
+                            {allFolders.length > 0 && (
+                                <div className="nav-group">
+                                    <span className="nav-label">/// CARPETAS</span>
+                                    <nav className="folders-nav">
+                                        {allFolders.map(folder => (
+                                            <button key={folder} className={activeTab === 'almacen' && activeSidebarFolder === folder ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('almacen', folder)}>
+                                                <Folder size={18} /> {folder}
+                                            </button>
+                                        ))}
+                                    </nav>
+                                </div>
+                            )}
+
+                            <div className="nav-group">
+                                <span className="nav-label">/// ZERO_KNOWLEDGE</span>
+                                <nav>
+                                    <button className={activeTab === 'generador' ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('generador')}><KeySquare size={18} /> Motor CSPRNG</button>
+                                    <button className={activeTab === 'auditoria' ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('auditoria')}><ShieldCheck size={18} /> Auditoría Local</button>
+                                    <button className={activeTab === 'send' ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('send')}><Link2 size={18} /> Envío Efímero</button>
+                                    <button className={activeTab === 'radar' ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('radar')}><Radar size={18} /> Radar Honeytoken</button>
+                                </nav>
+                            </div>
+                            <button className="logout-sidebar-btn icon-btn-center" onClick={handleLogout}>
+                                <LogOut size={16} /> Finalizar Sesión
+                            </button>
                         </div>
                     </aside>
 
-                    <main className="main-content">{renderContent()}</main>
+                    <main className="main-content">
+                        {renderContent()}
+                    </main>
                 </>
             )}
         </div>
