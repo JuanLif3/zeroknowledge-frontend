@@ -73,24 +73,28 @@ const SharedSecret = () => {
 
                         {/* EL CONTENEDOR SNAPCHAT */}
                         <div 
-                            className={`secret-viewer ${isHolding ? 'visible' : 'blurred'}`}
-                            onMouseDown={() => holdToReveal && setIsHolding(true)}
-                            onMouseUp={() => setIsHolding(false)}
-                            onMouseLeave={() => setIsHolding(false)}
-                            onTouchStart={() => holdToReveal && setIsHolding(true)}
-                            onTouchEnd={() => setIsHolding(false)}
-                            onContextMenu={(e) => e.preventDefault()}
-                            style={{ userSelect: 'none' }}
-                        >
-                            {!holdToReveal || isHolding ? (
-                                <div className="text-content">{secret}</div>
-                            ) : (
-                                <div className="placeholder-content">
-                                    <Fingerprint size={40} />
-                                    <span>MANTÉN PRESIONADO PARA LEER</span>
-                                </div>
-                            )}
-                        </div>
+    className={`secret-viewer ${isHolding ? 'visible' : 'blurred'}`}
+    onMouseDown={() => holdToReveal && setIsHolding(true)}
+    onMouseUp={() => setIsHolding(false)}
+    onMouseLeave={() => setIsHolding(false)}
+    
+    // ESTO BLOQUEA EL COPIADO Y CLIC DERECHO
+    onContextMenu={(e) => e.preventDefault()}
+    onCopy={(e) => {
+        e.preventDefault();
+        alert("ALERTA DE SEGURIDAD: La copia de este mensaje efímero está restringida.");
+    }}
+    style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+>
+    {(!holdToReveal || isHolding) ? (
+        <div className="text-content">{secret}</div>
+    ) : (
+        <div className="placeholder-content">
+            <Fingerprint size={40} />
+            <span>MANTÉN PRESIONADO PARA LEER EL PAYLOAD</span>
+        </div>
+    )}
+</div>
 
                         <p className="warning-p">
                             <ShieldAlert size={14} /> El registro ha sido purgado de la memoria del servidor.
