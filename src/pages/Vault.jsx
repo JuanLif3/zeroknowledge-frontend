@@ -122,12 +122,15 @@ const Vault = () => {
 
     // CACHÉ EN RAM Y DESENCRIPTADO MÁGICO (BLINDADO)
     const processedItems = useMemo(() => {
+        // Si la bóveda está bloqueada o no hay llave, no intentamos descifrar nada.
+        if (!isUnlocked || !masterKey) return [];
+
         return items.map(item => {
             try {
                 const decTitle = decryptData(item.encryptedTitle, masterKey);
                 const decPayloadStr = decryptData(item.encryptedPayload, masterKey);
                 
-                // 1er Filtro: Si la llave es incorrecta o el dato es viejo
+                // 1er Filtro: Si la llave es incorrecta...
                 if (decTitle === "/// ACCESO DENEGADO ///" || decPayloadStr === "/// ACCESO DENEGADO ///") {
                     return { 
                         ...item, 
@@ -136,16 +139,16 @@ const Vault = () => {
                     };
                 }
 
-                // 2do Filtro: Si el descifrado funcionó, lo convertimos a JSON
+                // 2do Filtro: Si el descifrado funcionó...
                 const payload = JSON.parse(decPayloadStr);
                 return { ...item, decTitle, payload };
 
             } catch (e) { 
-                // 3er Filtro: Si el JSON estaba roto
+                // 3er Filtro: Si el JSON estaba roto...
                 return { ...item, decTitle: 'ERROR DE LECTURA', payload: { error: true, folder: '' } }; 
             }
         });
-    }, [items, masterKey]);
+    }, [items, masterKey, isUnlocked]);
 
     // GESTIÓN AVANZADA DE CARPETAS (Zero Knowledge)
     const prefsItem = processedItems.find(i => i.itemType === 'system_prefs');
