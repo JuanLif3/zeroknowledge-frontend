@@ -45,6 +45,35 @@ const Vault = () => {
 
     useEffect(() => { initCrypto(); fetchVault(); }, []);
 
+    // ==========================================
+    // SONAR DEL RADAR (BÚSQUEDA EN TIEMPO REAL)
+    // ==========================================
+    useEffect(() => {
+        // Solo encendemos el radar si la bóveda está abierta
+        if (!isUnlocked) return; 
+
+        const radarSweep = setInterval(async () => {
+            try {
+                const logs = await vaultService.getIntrusions();
+                
+                setIntrusions(prevLogs => {
+                    // Si el servidor encontró MÁS intrusiones de las que ya teníamos en pantalla...
+                    if (logs.length > prevLogs.length) {
+                        // ¡Hacemos saltar la alarma visual y sonora!
+                        showToast('⚠️ ALERTA: NUEVA INTRUSIÓN DETECTADA EN EL RADAR', 'error');
+                        return logs; // Actualizamos el estado para que la pantalla se ponga roja
+                    }
+                    return prevLogs; // Si está todo tranquilo, no cambiamos nada
+                });
+            } catch (error) {
+                console.error("Interferencia en el radar:", error);
+            }
+        }, 5000); // 5000 milisegundos = Hace un escaneo cada 5 segundos
+
+        // Apagamos el radar si el usuario cierra sesión o sale del componente
+        return () => clearInterval(radarSweep); 
+    }, [isUnlocked]);
+
     const showToast = (message, type = 'success') => {
         const id = Date.now();
         setToasts(prev => [...prev, { id, message, type }]);
