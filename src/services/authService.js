@@ -9,10 +9,8 @@ export const authService = {
         const response = await api.post('/auth/register', userData);
         return response.data;
     },
-    logout: () => {
-        // Al estar en HttpOnly, no podemos borrar la cookie desde JS.
-        // En producción, llamaríamos a un endpoint backend /auth/logout para que la destruya.
-        // Por ahora, recargamos la página para limpiar la RAM.
-        window.location.href = '/login';
+    logout: async () => {
+        // Le avisamos al backend que destruya la cookie
+        await api.post('/auth/logout'); 
     }
 };

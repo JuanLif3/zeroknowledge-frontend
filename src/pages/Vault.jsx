@@ -76,7 +76,19 @@ const Vault = () => {
     };
 
     const handleUnlock = (e) => { e.preventDefault(); setIsUnlocked(true); showToast('Bóveda Desencriptada Exitosamente', 'success'); };
-    const handleLogout = () => { authService.logout(); navigate('/login'); };
+    const handleLogout = async () => {
+        try {
+            // 1. Matamos la cookie en el servidor
+            await authService.logout();
+        } catch (error) {
+            console.error("Error al cerrar sesión en el servidor", error);
+        } finally {
+            // 2. Limpiamos cualquier rastro en el navegador y redirigimos
+            setMasterKey('');
+            setIsUnlocked(false);
+            window.location.href = '/login'; 
+        }
+    };
 
     // CACHÉ EN RAM Y DESENCRIPTADO MÁGICO
     const processedItems = useMemo(() => {
