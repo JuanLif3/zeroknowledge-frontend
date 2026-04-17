@@ -490,3 +490,112 @@
   select { flex: 1; padding: 0.8rem; background: #050505; border: 1px solid #333; color: white; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; cursor: pointer; outline: none; &:focus { border-color: white; } }
   .btn-manage-folders { background: #111; border: 1px solid #333; color: white; padding: 0 1rem; cursor: pointer; transition: 0.2s; &:hover { background: white; color: black; } }
 }
+
+// ==========================================
+// RESPONSIVIDAD TOTAL CORREGIDA
+// ==========================================
+
+.mobile-header { display: none; }
+.sidebar-overlay { display: none; }
+
+@media (max-width: 992px) {
+  .dashboard-layout {
+    display: block; // Cambiamos de flex a block para evitar que el sidebar ocupe espacio invisible
+    overflow-x: hidden;
+
+    // CABECERA MÓVIL (Fija)
+    .mobile-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1rem 1.5rem; background: #000; border-bottom: 1px solid #1a1a1a;
+      z-index: 1100; position: sticky; top: 0; width: 100%;
+      .mobile-menu-btn { background: transparent; color: white; border: none; cursor: pointer; }
+    }
+
+    // SIDEBAR: Ahora sí, 100% oculto
+    .sidebar {
+      position: fixed; top: 0; 
+      left: -320px; // Aumentamos el margen para asegurar que no se vea nada
+      width: 280px; height: 100vh; z-index: 1200;
+      transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      background: #050505;
+      padding: 2rem 1.5rem;
+      border-right: 1px solid #1a1a1a;
+      
+      &.open { left: 0; }
+      .brand.desktop-only { display: none; }
+    }
+
+    .sidebar-overlay {
+      display: block; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 1150;
+      opacity: 0; pointer-events: none; transition: 0.3s;
+    }
+    .sidebar.open + .main-content + .sidebar-overlay, // Si usas el overlay después
+    .sidebar-overlay { // O si lo manejas por estado en React
+       &[style*="display: block"] { opacity: 1; pointer-events: auto; }
+    }
+
+    // CONTENIDO PRINCIPAL
+    .main-content {
+      padding: 1.5rem 1rem;
+      width: 100%;
+      margin: 0;
+      height: auto;
+      min-height: calc(100vh - 60px);
+
+      // --- FIX MOTOR CSPRNG (Generador) ---
+      .password-generator-box.standalone {
+        padding: 2rem 1rem;
+        &::before { left: 1rem; }
+        
+        .result-box {
+          flex-direction: column; // Botón de copiar abajo en móvil
+          .password-display { 
+            font-size: 1.1rem; padding: 1.5rem 1rem; border-right: none; border-bottom: 1px solid #1a1a1a;
+          }
+          .copy-btn { padding: 1rem; width: 100%; justify-content: center; }
+        }
+
+        .gen-controls { flex-direction: column; align-items: flex-start; gap: 1rem; padding-bottom: 2rem; }
+        .gen-checkboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+        .gen-btn-large { padding: 1.2rem; font-size: 0.8rem; }
+      }
+
+      // --- FIX AUDITORÍA LOCAL ---
+      &.audit-dashboard {
+        .audit-header {
+          flex-direction: column; align-items: center; text-align: center; gap: 2rem;
+          .score-badge { width: 100%; padding: 1rem; .score-value { font-size: 2.2rem; } }
+        }
+        .stats-grid { grid-template-columns: 1fr; gap: 1rem; }
+        .vulnerabilities-list .vuln-grid { grid-template-columns: 1fr; }
+      }
+
+      // --- FIX ALMACÉN HORIZONTAL ---
+      .almacen-layout .vault-item.horizontal-row {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+        padding: 1.5rem 1rem;
+        
+        .item-header { h4 { font-size: 0.9rem; } }
+        .item-details { 
+          flex-direction: column; align-items: flex-start; gap: 0.4rem; 
+          background: rgba(255,255,255,0.02); padding: 0.8rem; border-radius: 4px;
+        }
+        .item-actions-bottom { 
+          justify-content: space-between; width: 100%; margin-top: 0.5rem;
+          button { font-size: 0.65rem; }
+        }
+      }
+    }
+  }
+}
+
+// Fix extra para el login/register en pantallas muy pequeñas
+@media (max-width: 480px) {
+    .auth-box {
+        padding: 1.5rem !important;
+        h2 { font-size: 1rem !important; }
+        .password-rules { font-size: 0.65rem !important; }
+    }
+}

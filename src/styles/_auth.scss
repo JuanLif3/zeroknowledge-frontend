@@ -243,3 +243,38 @@ input[type="password"] {
     opacity: 0.9; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; text-align: center;
   }
 }
+
+// ==========================================
+// RESPONSIVIDAD AUTENTICACIÓN (MÓVILES)
+// ==========================================
+
+@media (max-width: 768px) {
+  .auth-container {
+    padding: 1rem;
+    align-items: flex-start; // En móviles es mejor que quede arriba para evitar problemas con el teclado
+    padding-top: 3rem;
+
+    .auth-box {
+      padding: 2.5rem 1.5rem;
+      
+      .auth-header h2 { font-size: 1.2rem; }
+      
+      .auth-form {
+        // En móviles, el nombre y apellido en el registro van uno debajo del otro
+        .split-inputs {
+          grid-template-columns: 1fr !important;
+          gap: 1.2rem !important;
+        }
+
+        input { padding: 1rem; font-size: 0.85rem; }
+      }
+
+      // En el modo Snapchat, el mensaje se ajusta
+      .secret-viewer {
+        padding: 2rem 1rem;
+        min-height: 200px;
+        .text-content { font-size: 0.85rem; }
+      }
+    }
+  }
+}
