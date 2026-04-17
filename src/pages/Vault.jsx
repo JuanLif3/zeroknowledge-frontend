@@ -505,6 +505,7 @@ const Vault = () => {
                                 <div className="sensor-count"><span className="count-number">{honeytokens.length}</span><span className="count-label">SENSORES ACTIVOS</span></div>
                             </div>
                         </div>
+                        
                         {isUnderAttack && (
                             <div className="alerts-panel" style={{marginBottom: '3rem', border: '1px solid #ef4444', padding: '2rem', background: 'rgba(239, 68, 68, 0.05)'}}>
                                 <h3 style={{color: '#ef4444', marginTop: 0, display: 'flex', alignItems: 'center', gap: '0.5rem'}}><AlertTriangle size={20}/> REGISTRO DE AMENAZAS</h3>
@@ -519,12 +520,17 @@ const Vault = () => {
                                 </div>
                             </div>
                         )}
+
                         <div className="honeytoken-list">
                             <h3>/// CUADRÍCULA DE MONITOREO</h3>
                             <div className="sensor-grid">
                                 {honeytokens.map(item => {
                                     const attacksOnThis = intrusions.filter(log => log.vaultItemId === item.id).length;
                                     const compromised = attacksOnThis > 0;
+                                    
+                                    // LA MAGIA: Construimos la URL que atrapa al hacker usando el UUID de la base de datos
+                                    const trapUrl = `http://localhost:8080/api/v1/trap/${item.trapToken}`;
+
                                     return (
                                         <div key={item.id} className="sensor-card" style={compromised ? {borderColor: '#ef4444', background: 'rgba(239, 68, 68, 0.02)'} : {}}>
                                             <div className="sensor-header" style={compromised ? {borderBottomColor: '#ef4444'} : {}}>
@@ -535,9 +541,40 @@ const Vault = () => {
                                                 <p><strong>ESTADO:</strong> <span style={{color: compromised ? '#ef4444' : '#10b981'}}>{compromised ? 'COMPROMETIDO' : 'VIGILANDO'}</span></p>
                                                 <p><strong>AMENAZAS:</strong> <span style={compromised ? {color: '#ef4444', fontWeight: 'bold'} : {}}>{attacksOnThis} DETECTADAS</span></p>
                                             </div>
-                                            <button className="simulate-btn" onClick={() => handleSimulateIntrusion(item.id)} style={compromised ? {borderColor: '#ef4444', color: '#ef4444'} : {}}>
-                                                Simular Intrusión
-                                            </button>
+                                            
+                                            {/* NUEVA SECCIÓN: URL DE TRAMPA EN VEZ DEL BOTÓN DE SIMULAR */}
+                                            <div style={{ marginTop: '1rem', borderTop: compromised ? '1px solid rgba(239, 68, 68, 0.2)' : '1px solid #222', paddingTop: '1rem' }}>
+                                                <span style={{ fontSize: '0.75rem', color: '#888', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>
+                                                    URL Trampa (Pública):
+                                                </span>
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                    <input
+                                                        type="text"
+                                                        readOnly
+                                                        value={trapUrl}
+                                                        style={{
+                                                            flex: 1, padding: '0.5rem', background: '#000',
+                                                            border: '1px solid #333', 
+                                                            color: compromised ? '#ef4444' : '#10b981',
+                                                            fontSize: '0.75rem', width: '100%', outline: 'none'
+                                                        }}
+                                                    />
+                                                    <button
+                                                        onClick={() => handleCopy(trapUrl, 'URL Trampa')}
+                                                        style={{
+                                                            padding: '0 1rem', background: 'rgba(16, 185, 129, 0.1)',
+                                                            color: '#10b981', border: 'none', cursor: 'pointer',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                        }}
+                                                        title="Copiar para engañar al hacker"
+                                                    >
+                                                        <Copy size={16} />
+                                                    </button>
+                                                </div>
+                                                <p style={{ fontSize: '0.7rem', color: '#666', marginTop: '0.8rem', lineHeight: '1.4' }}>
+                                                    * Deja este enlace en un lugar donde un intruso pueda robarlo (ej. en un archivo llamado "Acceso-API.txt"). Si intenta acceder, registraremos su IP de inmediato.
+                                                </p>
+                                            </div>
                                         </div>
                                     );
                                 })}
@@ -787,7 +824,10 @@ const Vault = () => {
                                     <button className={activeTab === 'generador' ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('generador')}><KeySquare size={18} /> Motor CSPRNG</button>
                                     <button className={activeTab === 'auditoria' ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('auditoria')}><ShieldCheck size={18} /> Auditoría Local</button>
                                     <button className={activeTab === 'send' ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('send')}><Link2 size={18} /> Envío Efímero</button>
-                                    <button className={activeTab === 'radar' ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('radar')}><Radar size={18} /> Radar Honeytoken</button>
+                                    <button 
+                                        className={activeTab === 'radar' ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('radar')}>
+                                            <Radar size={18} /> Radar Honeytoken
+                                        </button>
                                 </nav>
                             </div>
                             <button className="logout-sidebar-btn icon-btn-center" onClick={handleLogout}>
