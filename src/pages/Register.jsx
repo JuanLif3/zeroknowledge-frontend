@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
-// Añadimos el icono de Download
-import { ShieldCheck, AlertTriangle, Info, Download } from 'lucide-react'; 
+import { ShieldCheck, AlertTriangle, Info, Download, Copy } from 'lucide-react'; 
 
 const Register = () => {
     const navigate = useNavigate();
@@ -10,19 +9,19 @@ const Register = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     
-    // NUEVO ESTADO: Controla si el modal de emergencia está visible
-    const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+    const [seedPhrase, setSeedPhrase] = useState(null);
 
-    // PASO 1: Guardar en base de datos y abrir el Modal
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setIsLoading(true);
 
         try {
-            await authService.register(formData);
-            // En vez de navegar, abrimos el recuadro de advertencia
-            setShowRecoveryModal(true); 
+            // El servicio ahora genera las llaves y devuelve las 24 palabras
+            const data = await authService.register(formData);
+            
+            // Atrapamos las 24 palabras y abrimos el Modal del Kit de Emergencia
+            setSeedPhrase(data.seedPhrase); 
         } catch (err) {
             const backendMsg = err.response?.data?.message || err.response?.data?.error;
             if (err.response?.status === 400) {
@@ -35,7 +34,6 @@ const Register = () => {
         }
     };
 
-    // PASO 2: Cuando el usuario hace clic en el botón del Modal
     const handleDownloadAndProceed = () => {
         const kitContent = `
 ===================================================
@@ -45,14 +43,16 @@ const Register = () => {
 ATENCIÓN: Guarda este documento en un lugar sumamente seguro 
 (ej. imprímelo y guárdalo en una caja fuerte, o en un USB offline).
 
-Como utilizamos una arquitectura Zero-Knowledge (Cero Conocimiento), 
-nosotros NO tenemos copia de tu contraseña. Todo se encripta en tu PC.
+Como utilizamos una arquitectura Zero-Knowledge KEK/DEK, 
+nosotros NO tenemos copia de tu contraseña ni de tu llave maestra.
 
-SI PIERDES ESTA CLAVE, PERDERÁS EL ACCESO A TODA TU BÓVEDA DE FORMA IRREVERSIBLE. ⚠️
-El soporte técnico NO PUEDE ayudarte a recuperarla.
+SI OLVIDAS TU CONTRASEÑA, ESTA FRASE SEMILLA DE 24 PALABRAS
+ES LA ÚNICA FORMA DE RECUPERAR EL ACCESO A TU BÓVEDA. ⚠️
 
 👤 USUARIO: ${formData.email}
-🔑 CONTRASEÑA MAESTRA: ${formData.password}
+
+🌱 FRASE SEMILLA (24 PALABRAS):
+${seedPhrase}
 
 Generado el: ${new Date().toLocaleString()}
 ===================================================
@@ -61,13 +61,12 @@ Generado el: ${new Date().toLocaleString()}
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `Recovery_Kit_${formData.firstname}.txt`;
+        link.download = `Recovery_Seed_${formData.firstname}.txt`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
 
-        // ¡Ahora sí! Entramos a la bóveda
         navigate('/vault');
     };
 
@@ -114,7 +113,7 @@ Generado el: ${new Date().toLocaleString()}
                     </div>
                     
                     <button type="submit" disabled={isLoading} className={isLoading ? 'loading' : ''}>
-                        {isLoading ? 'Forjando Llaves...' : 'Establecer Bóveda'}
+                        {isLoading ? 'Forjando Llaves Invisibles...' : 'Establecer Bóveda'}
                     </button>
                 </form>
 
@@ -123,32 +122,31 @@ Generado el: ${new Date().toLocaleString()}
                 </div>
             </div>
 
-            {/* ========================================== */}
-            {/* RECUADRO MODAL DE ADVERTENCIA ZERO-KNOWLEDGE */}
-            {/* ========================================== */}
-            {showRecoveryModal && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backdropFilter: 'blur(5px)' }}>
-                    <div style={{ background: '#111', border: '1px solid #ef4444', padding: '2.5rem', borderRadius: '12px', maxWidth: '450px', textAlign: 'center', boxShadow: '0 10px 30px rgba(239, 68, 68, 0.2)' }}>
-                        <AlertTriangle size={56} color="#ef4444" style={{ marginBottom: '1rem' }}/>
-                        <h2 style={{ color: '#fff', marginBottom: '1rem', fontSize: '1.5rem' }}>Paso Final de Seguridad</h2>
+            {seedPhrase && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.92)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backdropFilter: 'blur(10px)' }}>
+                    <div style={{ background: '#111', border: '1px solid #10b981', padding: '3rem', borderRadius: '12px', maxWidth: '600px', width: '90%', textAlign: 'center', boxShadow: '0 0 40px rgba(16, 185, 129, 0.2)' }}>
+                        <ShieldCheck size={56} color="#10b981" style={{ marginBottom: '1rem' }}/>
+                        <h2 style={{ color: '#10b981', marginBottom: '1rem' }}>BÓVEDA FORJADA CON ÉXITO</h2>
                         
-                        <p style={{ color: '#aaa', fontSize: '0.95rem', marginBottom: '1rem', lineHeight: '1.6' }}>
-                            Tu bóveda ha sido creada con éxito y encriptada en tu dispositivo. 
-                            Debido a nuestra arquitectura <strong>Zero-Knowledge</strong>, nosotros NO tenemos tu contraseña.
+                        <p style={{ color: '#aaa', fontSize: '0.95rem', lineHeight: '1.5', marginBottom: '1.5rem' }}>
+                            Tu "Llave Invisible" ha sido creada. Debido a la arquitectura Zero-Knowledge, si olvidas tu contraseña, esta frase de 24 palabras es <strong>la única forma en el universo</strong> de recuperar tus datos.
                         </p>
-                        
-                        <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px dashed #ef4444', padding: '1rem', borderRadius: '8px', marginBottom: '2rem', color: '#ef4444', fontSize: '0.9rem', fontWeight: 'bold' }}>
-                            ⚠️ Si pierdes tu Contraseña Maestra, perderás el acceso a todos tus datos para siempre. El soporte técnico no puede restaurarla.
+
+                        <div style={{ background: '#000', padding: '1.5rem', borderRadius: '8px', border: '1px dashed #10b981', color: '#10b981', fontFamily: 'monospace', fontSize: '1.1rem', lineHeight: '1.8', wordSpacing: '8px', marginBottom: '2rem' }}>
+                            {seedPhrase}
                         </div>
 
                         <button 
                             onClick={handleDownloadAndProceed} 
-                            style={{ width: '100%', padding: '1rem', background: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', transition: 'background 0.2s' }}
-                            onMouseOver={(e) => e.target.style.background = '#dc2626'}
-                            onMouseOut={(e) => e.target.style.background = '#ef4444'}
+                            style={{ width: '100%', padding: '1.2rem', background: '#10b981', color: 'black', border: 'none', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', transition: 'background 0.2s' }}
+                            onMouseOver={(e) => e.target.style.background = '#059669'}
+                            onMouseOut={(e) => e.target.style.background = '#10b981'}
                         >
-                            <Download size={20} /> Entiendo el riesgo, Descargar Kit y Entrar
+                            <Download size={20} /> Descargar Kit de Recuperación y Entrar
                         </button>
+                        <p style={{ color: '#666', fontSize: '0.8rem', marginTop: '1rem' }}>
+                            Guarda el archivo descargado en un USB o imprímelo. No lo subas a la nube.
+                        </p>
                     </div>
                 </div>
             )}
