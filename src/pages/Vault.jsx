@@ -46,8 +46,21 @@ const Vault = () => {
 
     const [qrCode, setQrCode] = useState(null); // Guardará la imagen del QR
     const [twoFactorCode, setTwoFactorCode] = useState(''); // Guardará lo que escriba el usuario
+    const [is2FAEnabled, setIs2FAEnabled] = useState(false);
 
     useEffect(() => { initCrypto(); fetchVault(); }, []);
+
+    // ==========================================
+    // SINCRONIZACIÓN DE ESTADO DE SEGURIDAD
+    // ==========================================
+    useEffect(() => {
+        // Apenas la bóveda se desbloquee, preguntamos al servidor el estado real
+        if (isUnlocked) {
+            authService.get2FAStatus()
+                .then(isEnabled => setIs2FAEnabled(isEnabled))
+                .catch(err => console.error("Error consultando seguridad:", err));
+        }
+    }, [isUnlocked]); // Se dispara cada vez que entras a la bóveda
 
     // ==========================================
     // SONAR DEL RADAR (BÚSQUEDA EN TIEMPO REAL)
@@ -97,6 +110,13 @@ const Vault = () => {
             setActiveSidebarFolder('all');
         }
         setIsMobileMenuOpen(false); // Cierra el menú en móviles
+
+        // Si entra a la pestaña de configuración, revisamos su estado
+        if (tab === 'configuracion') {
+            authService.get2FAStatus()
+                .then(isEnabled => setIs2FAEnabled(isEnabled))
+                .catch(() => console.log("Error al consultar estado 2FA"));
+        }
     };
 
     const fetchVault = async () => {
@@ -376,8 +396,9 @@ const Vault = () => {
         try {
             await authService.enable2FA(twoFactorCode);
             showToast("¡Autenticación 2FA Activada con Éxito!", "success");
-            setQrCode(null); // Ocultamos el QR porque ya se activó
+            setQrCode(null); 
             setTwoFactorCode('');
+            setIs2FAEnabled(true); 
         } catch (error) {
             showToast("Código inválido. Revisa tu celular e intenta de nuevo.", "error");
         }
@@ -564,41 +585,57 @@ const Vault = () => {
                 return (
                     <div className="tab-content standalone-form" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', paddingTop: '2rem' }}>
                         <h2 className="icon-heading" style={{ justifyContent: 'center' }}><ShieldCheck size={28}/> Seguridad Avanzada</h2>
-                        <p style={{ color: '#aaa', marginBottom: '2rem' }}>
-                            Protege tu bóveda vinculando tu cuenta con una aplicación de Autenticación 
-                            (como Google Authenticator o Authy).
-                        </p>
-
-                        {!qrCode ? (
-                            <button 
-                                onClick={handleGenerateQR} 
-                                style={{ background: '#3b82f6', color: 'white', padding: '1rem 2rem', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}
-                            >
-                                Generar Código QR de Vinculación
-                            </button>
-                        ) : (
-                            <div style={{ background: '#111', border: '1px solid #333', padding: '2rem', borderRadius: '12px' }}>
-                                <h3 style={{ color: '#f59e0b', marginBottom: '1rem' }}>Paso 1: Escanea este Código</h3>
-                                <div style={{ background: 'white', display: 'inline-block', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
-                                    <img src={qrCode} alt="Código QR 2FA" style={{ width: '200px', height: '200px' }} />
-                                </div>
-
-                                <h3 style={{ color: '#f59e0b', marginBottom: '1rem' }}>Paso 2: Confirma el Código</h3>
-                                <form onSubmit={handleVerify2FA} style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                                    <input 
-                                        type="text" 
-                                        placeholder="Ej. 123456" 
-                                        maxLength="6"
-                                        value={twoFactorCode}
-                                        onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))} // Solo permite números
-                                        style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #444', background: '#000', color: '#fff', width: '120px', textAlign: 'center', fontSize: '1.2rem', letterSpacing: '2px' }}
-                                        required 
-                                    />
-                                    <button type="submit" style={{ background: '#10b981', color: 'black', border: 'none', borderRadius: '6px', padding: '0 1.5rem', fontWeight: 'bold', cursor: 'pointer' }}>
-                                        Validar
-                                    </button>
-                                </form>
+                        
+                        {/* SI EL 2FA YA ESTÁ ACTIVO, MOSTRAMOS EL ESCUDO VERDE */}
+                        {is2FAEnabled ? (
+                            <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid #10b981', padding: '3rem 2rem', borderRadius: '12px', marginTop: '2rem' }}>
+                                <ShieldCheck size={64} color="#10b981" style={{ marginBottom: '1rem' }} />
+                                <h3 style={{ color: '#10b981', fontSize: '1.5rem', marginBottom: '1rem' }}>Autenticación 2FA Activada</h3>
+                                <p style={{ color: '#aaa', lineHeight: '1.6' }}>
+                                    Tu cuenta está blindada mediante Autenticación de Dos Factores. <br/>
+                                    Se requerirá un código de tu aplicación autenticadora (ej. Google Authenticator) cada vez que inicies sesión.
+                                </p>
                             </div>
+                        ) : (
+                            /* SI NO ESTÁ ACTIVO, MOSTRAMOS EL FLUJO DE CREACIÓN QUE YA TENÍAS */
+                            <>
+                                <p style={{ color: '#aaa', marginBottom: '2rem' }}>
+                                    Protege tu bóveda vinculando tu cuenta con una aplicación de Autenticación 
+                                    (como Google Authenticator o Authy).
+                                </p>
+
+                                {!qrCode ? (
+                                    <button 
+                                        onClick={handleGenerateQR} 
+                                        style={{ background: '#3b82f6', color: 'white', padding: '1rem 2rem', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}
+                                    >
+                                        Generar Código QR de Vinculación
+                                    </button>
+                                ) : (
+                                    <div style={{ background: '#111', border: '1px solid #333', padding: '2rem', borderRadius: '12px' }}>
+                                        <h3 style={{ color: '#f59e0b', marginBottom: '1rem' }}>Paso 1: Escanea este Código</h3>
+                                        <div style={{ background: 'white', display: 'inline-block', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
+                                            <img src={qrCode} alt="Código QR 2FA" style={{ width: '200px', height: '200px' }} />
+                                        </div>
+
+                                        <h3 style={{ color: '#f59e0b', marginBottom: '1rem' }}>Paso 2: Confirma el Código</h3>
+                                        <form onSubmit={handleVerify2FA} style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Ej. 123456" 
+                                                maxLength="6"
+                                                value={twoFactorCode}
+                                                onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
+                                                style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #444', background: '#000', color: '#fff', width: '120px', textAlign: 'center', fontSize: '1.2rem', letterSpacing: '2px' }}
+                                                required 
+                                            />
+                                            <button type="submit" style={{ background: '#10b981', color: 'black', border: 'none', borderRadius: '6px', padding: '0 1.5rem', fontWeight: 'bold', cursor: 'pointer' }}>
+                                                Validar
+                                            </button>
+                                        </form>
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
                 );

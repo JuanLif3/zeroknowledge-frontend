@@ -37,5 +37,10 @@ export const authService = {
     enable2FA: async (code) => {
         const response = await api.post('/auth/2fa/enable', { code: code });
         return response.data;
+    },
+
+    get2FAStatus: async () => {
+        const response = await api.get('/auth/2fa/status');
+        return response.data.isEnabled; // Devuelve true o false
     }
 };
