@@ -14,6 +14,7 @@ const Vault = () => {
     const [masterKey, setMasterKey] = useState('');
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [activeTab, setActiveTab] = useState('almacen');
+    const [processedItems, setProcessedItems] = useState([]);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -120,34 +121,36 @@ const Vault = () => {
     };
     
 
-    // CACHÉ EN RAM Y DESENCRIPTADO MÁGICO (BLINDADO)
-    const processedItems = useMemo(() => {
-        // Si la bóveda está bloqueada o no hay llave, no intentamos descifrar nada.
-        if (!isUnlocked || !masterKey) return [];
+    // ==========================================
+    // MOTOR DE DESCIFRADO ASÍNCRONO (AES-GCM)
+    // ==========================================
+    useEffect(() => {
+        if (!isUnlocked || !masterKey) {
+            setProcessedItems([]);
+            return;
+        }
 
-        return items.map(item => {
-            try {
-                const decTitle = decryptData(item.encryptedTitle, masterKey);
-                const decPayloadStr = decryptData(item.encryptedPayload, masterKey);
-                
-                // 1er Filtro: Si la llave es incorrecta...
-                if (decTitle === "/// ACCESO DENEGADO ///" || decPayloadStr === "/// ACCESO DENEGADO ///") {
-                    return { 
-                        ...item, 
-                        decTitle: 'CORRUPTO / LLAVE INVÁLIDA', 
-                        payload: { error: true, folder: '' } 
-                    };
+        const decryptVault = async () => {
+            // Desciframos todas las credenciales en paralelo de forma asíncrona
+            const decrypted = await Promise.all(items.map(async (item) => {
+                try {
+                    const decTitle = await decryptData(item.encryptedTitle, masterKey);
+                    const decPayloadStr = await decryptData(item.encryptedPayload, masterKey);
+                    
+                    if (decTitle === "/// ACCESO DENEGADO ///" || decPayloadStr === "/// ACCESO DENEGADO ///") {
+                        return { ...item, decTitle: 'CORRUPTO / LLAVE INVÁLIDA', payload: { error: true, folder: '' } };
+                    }
+
+                    return { ...item, decTitle, payload: JSON.parse(decPayloadStr) };
+                } catch (e) {
+                    return { ...item, decTitle: 'ERROR DE LECTURA', payload: { error: true, folder: '' } };
                 }
+            }));
+            
+            setProcessedItems(decrypted);
+        };
 
-                // 2do Filtro: Si el descifrado funcionó...
-                const payload = JSON.parse(decPayloadStr);
-                return { ...item, decTitle, payload };
-
-            } catch (e) { 
-                // 3er Filtro: Si el JSON estaba roto...
-                return { ...item, decTitle: 'ERROR DE LECTURA', payload: { error: true, folder: '' } }; 
-            }
-        });
+        decryptVault();
     }, [items, masterKey, isUnlocked]);
 
     // GESTIÓN AVANZADA DE CARPETAS (Zero Knowledge)
@@ -231,8 +234,10 @@ const Vault = () => {
         else if (formData.itemType === 'nota') { payloadObj.noteContent = formData.noteContent; }
 
         const jsonString = JSON.stringify(payloadObj);
-        const encTitle = encryptData(formData.title, masterKey);
-        const encPayload = encryptData(jsonString, masterKey);
+        
+        // 👇 ¡AQUÍ ESTÁ EL CAMBIO VITAL! Faltaba el "await" 👇
+        const encTitle = await encryptData(formData.title, masterKey);
+        const encPayload = await encryptData(jsonString, masterKey);
 
         try {
             if (formData.id) {
@@ -244,6 +249,40 @@ const Vault = () => {
             }
             setFormData(initialFormState); fetchVault(); setActiveTab('almacen');
         } catch (error) { showToast('Error de Cifrado o Guardado', 'error'); }
+    };
+
+    // ==========================================
+    // SOBERANÍA DE DATOS: EXPORTAR BÓVEDA
+    // ==========================================
+    const handleExportVault = () => {
+        if (processedItems.length === 0) {
+            showToast("Tu bóveda está vacía, no hay nada que exportar.", "info");
+            return;
+        }
+
+        // 1. Limpiamos los datos para no exportar cosas innecesarias del backend
+        const exportData = processedItems.map(item => ({
+            titulo: item.decTitle,
+            tipo: item.itemType,
+            datos: item.payload,
+            creado_el: item.createdAt
+        }));
+
+        // 2. Convertimos a texto JSON formateado y creamos un Blob (Archivo virtual en RAM)
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+
+        // 3. Forzamos la descarga en el navegador
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `ZK_Vault_Export_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        showToast("Bóveda exportada de forma segura", "success");
     };
 
     const handleEdit = (item) => {
@@ -877,6 +916,9 @@ const Vault = () => {
                                         className={activeTab === 'radar' ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('radar')}>
                                             <Radar size={18} /> Radar Honeytoken
                                         </button>
+                                        <button onClick={handleExportVault} className="icon-btn-center" style={{marginTop: '1rem', background: '#10b981', color: 'black', border: 'none'}}>
+    Exportar Bóveda Descifrada
+</button>
                                 </nav>
                             </div>
                             <button className="logout-sidebar-btn icon-btn-center" onClick={handleLogout}>
