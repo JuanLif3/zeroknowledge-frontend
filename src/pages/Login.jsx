@@ -67,6 +67,7 @@ const Login = () => {
                             <button type="submit" disabled={isLoading} className={isLoading ? 'loading' : ''}>
                                 {isLoading ? 'Verificando...' : 'Autenticar'}
                             </button>
+                            
                         </>
                     ) : (
                         /* SI REQUIERE 2FA, MOSTRAMOS SOLO EL RECUADRO DE 6 DÍGITOS */
@@ -97,12 +98,23 @@ const Login = () => {
                                 Volver al inicio de sesión
                             </button>
                         </div>
+                        
                     )}
                 </form>
 
                 {!needs2FA && (
-                    <div className="auth-footer">
-                        <p>¿No tienes una bóveda? <Link to="/register">Crear Bóveda Local</Link></p>
+                    <div className="auth-footer" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                        <p style={{ margin: 0 }}>¿No tienes una bóveda? <Link to="/register">Crear Bóveda Local</Link></p>
+                        
+                        {/* ENLACE DE RECUPERACIÓN */}
+                        <Link 
+                            to="/recovery" 
+                            style={{ color: '#ef4444', fontSize: '0.85rem', textDecoration: 'none', fontWeight: 'bold', transition: 'color 0.2s' }} 
+                            onMouseOver={(e) => e.target.style.color = '#dc2626'} 
+                            onMouseOut={(e) => e.target.style.color = '#ef4444'}
+                        >
+                            ¿Olvidaste tu Contraseña Maestra?
+                        </Link>
                     </div>
                 )}
             </div>

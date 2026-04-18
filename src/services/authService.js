@@ -1,5 +1,5 @@
 import api from './api';
-import { hashPassword, generateRandomSalt, generateMasterKey, generateSeedPhrase, wrapMasterKey } from './cryptoService'; 
+import { hashPassword, generateRandomSalt, generateMasterKey, generateSeedPhrase, wrapMasterKey, unwrapMasterKey } from './cryptoService';
 
 export const authService = {
     getSalt: async (email) => {
@@ -71,5 +71,33 @@ export const authService = {
     get2FAStatus: async () => {
         const response = await api.get('/auth/2fa/status');
         return response.data.isEnabled;
-    }
+    },
+    
+    // PROTOCOLO DE RESCATE ZERO-KNOWLEDGE
+    resetPassword: async (email, seedPhrase, newPassword) => {
+        // 1. Pedimos la caja fuerte de emergencia a Java
+        const response = await api.get(`/auth/recovery-data/${email}`);
+        const { salt, recoveryMasterKey } = response.data;
+
+        // 2. Intentamos abrirla usando las 24 palabras (unwrap)
+        // IMPORTANTE: Asegúrate de importar unwrapMasterKey arriba en este archivo
+        const dek = await unwrapMasterKey(recoveryMasterKey, seedPhrase.trim(), salt);
+        
+        if (!dek) {
+            throw new Error("Frase semilla incorrecta o corrupta.");
+        }
+
+        // 3. Si funcionó, procesamos la NUEVA contraseña
+        const newAuthHash = await hashPassword(newPassword, salt);
+        
+        // 4. Metemos la Llave Invisible en una nueva caja fuerte usando la NUEVA contraseña
+        const newEncryptedMasterKey = await wrapMasterKey(dek, newPassword, salt);
+
+        // 5. Enviamos todo a Java para que actualice la base de datos
+        await api.post('/auth/reset-password', { 
+            email: email, 
+            newAuthHash: newAuthHash, 
+            newEncryptedMasterKey: newEncryptedMasterKey 
+        });
+    },
 };
