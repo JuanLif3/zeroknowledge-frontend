@@ -24,5 +24,17 @@ export const authService = {
 
     logout: async () => {
         await api.post('/auth/logout'); 
+    },
+
+    // Pide la imagen del QR al backend
+    setup2FA: async () => {
+        const response = await api.get('/auth/2fa/setup');
+        return response.data; // Devuelve { qrCode: "data:image/png..." }
+    },
+
+    // Envía los 6 dígitos para validar
+    enable2FA: async (code) => {
+        const response = await api.post('/auth/2fa/enable', { code: code });
+        return response.data;
     }
 };

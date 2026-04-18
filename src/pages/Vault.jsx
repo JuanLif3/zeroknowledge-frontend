@@ -44,6 +44,9 @@ const Vault = () => {
     const [secretLink, setSecretLink] = useState('');
     const [holdToReveal, setHoldToReveal] = useState(false);
 
+    const [qrCode, setQrCode] = useState(null); // Guardará la imagen del QR
+    const [twoFactorCode, setTwoFactorCode] = useState(''); // Guardará lo que escriba el usuario
+
     useEffect(() => { initCrypto(); fetchVault(); }, []);
 
     // ==========================================
@@ -354,6 +357,31 @@ const Vault = () => {
             setSecretLink(link); setSecretMessage(''); showToast("Enlace Cifrado Generado", "success");
         } catch (error) { showToast("Error al generar el link seguro.", "error"); }
     };
+
+    // ==========================================
+    // LÓGICA DE 2FA (Google Authenticator)
+    // ==========================================
+    const handleGenerateQR = async () => {
+        try {
+            const data = await authService.setup2FA();
+            setQrCode(data.qrCode);
+            showToast("Código QR Generado. Escanéalo con tu App.", "info");
+        } catch (error) {
+            showToast("Error al generar el QR", "error");
+        }
+    };
+
+    const handleVerify2FA = async (e) => {
+        e.preventDefault();
+        try {
+            await authService.enable2FA(twoFactorCode);
+            showToast("¡Autenticación 2FA Activada con Éxito!", "success");
+            setQrCode(null); // Ocultamos el QR porque ya se activó
+            setTwoFactorCode('');
+        } catch (error) {
+            showToast("Código inválido. Revisa tu celular e intenta de nuevo.", "error");
+        }
+    };
     
     const copySecretLink = () => { navigator.clipboard.writeText(secretLink); showToast("¡Link copiado al portapapeles!", "success"); };
 
@@ -530,6 +558,48 @@ const Vault = () => {
                                 </div>
                             )}
                         </div>
+                    </div>
+                );
+                case 'configuracion':
+                return (
+                    <div className="tab-content standalone-form" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', paddingTop: '2rem' }}>
+                        <h2 className="icon-heading" style={{ justifyContent: 'center' }}><ShieldCheck size={28}/> Seguridad Avanzada</h2>
+                        <p style={{ color: '#aaa', marginBottom: '2rem' }}>
+                            Protege tu bóveda vinculando tu cuenta con una aplicación de Autenticación 
+                            (como Google Authenticator o Authy).
+                        </p>
+
+                        {!qrCode ? (
+                            <button 
+                                onClick={handleGenerateQR} 
+                                style={{ background: '#3b82f6', color: 'white', padding: '1rem 2rem', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}
+                            >
+                                Generar Código QR de Vinculación
+                            </button>
+                        ) : (
+                            <div style={{ background: '#111', border: '1px solid #333', padding: '2rem', borderRadius: '12px' }}>
+                                <h3 style={{ color: '#f59e0b', marginBottom: '1rem' }}>Paso 1: Escanea este Código</h3>
+                                <div style={{ background: 'white', display: 'inline-block', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
+                                    <img src={qrCode} alt="Código QR 2FA" style={{ width: '200px', height: '200px' }} />
+                                </div>
+
+                                <h3 style={{ color: '#f59e0b', marginBottom: '1rem' }}>Paso 2: Confirma el Código</h3>
+                                <form onSubmit={handleVerify2FA} style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Ej. 123456" 
+                                        maxLength="6"
+                                        value={twoFactorCode}
+                                        onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))} // Solo permite números
+                                        style={{ padding: '0.8rem', borderRadius: '6px', border: '1px solid #444', background: '#000', color: '#fff', width: '120px', textAlign: 'center', fontSize: '1.2rem', letterSpacing: '2px' }}
+                                        required 
+                                    />
+                                    <button type="submit" style={{ background: '#10b981', color: 'black', border: 'none', borderRadius: '6px', padding: '0 1.5rem', fontWeight: 'bold', cursor: 'pointer' }}>
+                                        Validar
+                                    </button>
+                                </form>
+                            </div>
+                        )}
                     </div>
                 );
             case 'send': 
@@ -890,6 +960,7 @@ const Vault = () => {
                                     <button className={activeTab === 'crear' ? 'active icon-btn' : 'icon-btn'} onClick={() => { handleNavClick('crear'); setFormData(initialFormState); }}>
                                         <PlusSquare size={18} /> Crear Credencial
                                     </button>
+                                    
                                 </nav>
                             </div>
 
@@ -919,6 +990,11 @@ const Vault = () => {
                                         <button onClick={handleExportVault} className="icon-btn-center" style={{marginTop: '1rem', background: '#10b981', color: 'black', border: 'none'}}>
     Exportar Bóveda Descifrada
 </button>
+
+<button className={activeTab === 'configuracion' ? 'active' : ''} onClick={() => setActiveTab('configuracion')}>
+        Seguridad y 2FA
+    </button>
+    
                                 </nav>
                             </div>
                             <button className="logout-sidebar-btn icon-btn-center" onClick={handleLogout}>

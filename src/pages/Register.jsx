@@ -39,7 +39,7 @@ const Register = () => {
     const handleDownloadAndProceed = () => {
         const kitContent = `
 ===================================================
- 🔐 KIT DE EMERGENCIA - ZERO KNOWLEDGE VAULT 🔐
+      KIT DE EMERGENCIA - ZERO KNOWLEDGE VAULT 
 ===================================================
 
 ATENCIÓN: Guarda este documento en un lugar sumamente seguro 
@@ -48,7 +48,7 @@ ATENCIÓN: Guarda este documento en un lugar sumamente seguro
 Como utilizamos una arquitectura Zero-Knowledge (Cero Conocimiento), 
 nosotros NO tenemos copia de tu contraseña. Todo se encripta en tu PC.
 
-⚠️ SI PIERDES ESTA CLAVE, PERDERÁS EL ACCESO A TODA TU BÓVEDA DE FORMA IRREVERSIBLE. ⚠️
+SI PIERDES ESTA CLAVE, PERDERÁS EL ACCESO A TODA TU BÓVEDA DE FORMA IRREVERSIBLE. ⚠️
 El soporte técnico NO PUEDE ayudarte a recuperarla.
 
 👤 USUARIO: ${formData.email}
