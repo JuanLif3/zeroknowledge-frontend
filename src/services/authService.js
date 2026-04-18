@@ -2,11 +2,12 @@ import api from './api';
 import { hashPassword } from './cryptoService'; // Importamos el generador de hash
 
 export const authService = {
-    login: async (email, password) => {
-        const hashedKey = await hashPassword(password); // Convertimos la clave en un Hash irreversible
+    login: async (email, password, twoFactorCode = null) => {
+        const hashedKey = await hashPassword(password);
         const response = await api.post('/auth/login', { 
             email: email, 
-            authHash: hashedKey 
+            authHash: hashedKey,
+            twoFactorCode: twoFactorCode // Añadimos esto
         });
         return response.data;
     },
