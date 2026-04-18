@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { ShieldCheck, AlertTriangle, Info, Download, Copy } from 'lucide-react'; 
@@ -9,32 +9,48 @@ const Register = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     
+    // ESTADOS PARA LA FRASE SEMILLA Y VALIDACIÓN
     const [seedPhrase, setSeedPhrase] = useState(null);
+    const [confirmWords, setConfirmWords] = useState({ index: 0, val: '' });
+    const [hasCheckedTerms, setHasCheckedTerms] = useState(false);
+
+    // Al generarse la frase, elegimos un índice al azar para la prueba de seguridad
+    useEffect(() => {
+        if (seedPhrase) {
+            const randomIndex = Math.floor(Math.random() * 24) + 1;
+            setConfirmWords({ index: randomIndex, val: '' });
+        }
+    }, [seedPhrase]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!hasCheckedTerms) {
+            setError("Debes aceptar la responsabilidad de custodia de tus llaves.");
+            return;
+        }
         setError('');
         setIsLoading(true);
 
         try {
-            // El servicio ahora genera las llaves y devuelve las 24 palabras
+            // El servicio genera las llaves DEK/KEK y devuelve las 24 palabras
             const data = await authService.register(formData);
-            
-            // Atrapamos las 24 palabras y abrimos el Modal del Kit de Emergencia
             setSeedPhrase(data.seedPhrase); 
         } catch (err) {
             const backendMsg = err.response?.data?.message || err.response?.data?.error;
-            if (err.response?.status === 400) {
-                setError("La contraseña no cumple con los requisitos o el servidor rechazó los datos.");
-            } else {
-                setError(backendMsg || "Error al procesar el registro. Intenta con otro correo.");
-            }
+            setError(backendMsg || "Error al procesar el registro. Intenta con otro correo.");
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleDownloadAndProceed = () => {
+    const handleFinalCheckAndProceed = () => {
+        const words = seedPhrase.split(' ');
+        if (confirmWords.val.trim().toLowerCase() !== words[confirmWords.index - 1]) {
+            alert(`¡Validación fallida! La palabra número #${confirmWords.index} no es correcta. Por favor, verifícala en tu lista.`);
+            return;
+        }
+
+        // Si la palabra es correcta, procedemos a la descarga del Kit y navegación
         const kitContent = `
 ===================================================
       KIT DE EMERGENCIA - ZERO KNOWLEDGE VAULT 
@@ -99,17 +115,27 @@ Generado el: ${new Date().toLocaleString()}
                         <input type="password" placeholder="Contraseña Maestra de Acceso" required value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
                     </div>
 
-                    <div className="password-rules" style={{ background: '#050505', border: '1px dashed #333', padding: '1rem', marginBottom: '1.5rem', fontSize: '0.75rem', color: '#888', fontFamily: 'monospace' }}>
+                    <div className="password-rules" style={{ background: '#050505', border: '1px dashed #333', padding: '1rem', marginBottom: '1rem', fontSize: '0.75rem', color: '#888', fontFamily: 'monospace' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b', marginBottom: '0.5rem' }}>
                             <Info size={14} /> <strong>POLÍTICA ESTRICTA REQUERIDA:</strong>
                         </div>
                         <ul style={{ margin: 0, paddingLeft: '1.2rem', lineHeight: '1.6' }}>
-                            <li>Mínimo 12 caracteres de longitud</li>
-                            <li>Al menos una letra MAYÚSCULA</li>
-                            <li>Al menos una letra minúscula</li>
-                            <li>Al menos un número (0-9)</li>
-                            <li>Un símbolo especial (!@#$%^&*...)</li>
+                            <li>Mínimo 12 caracteres</li>
+                            <li>Mayúsculas, minúsculas, números y símbolos</li>
                         </ul>
+                    </div>
+
+                    <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.7rem', alignItems: 'flex-start' }}>
+                        <input 
+                            type="checkbox" 
+                            id="terms" 
+                            checked={hasCheckedTerms} 
+                            onChange={(e) => setHasCheckedTerms(e.target.checked)}
+                            style={{ marginTop: '3px' }}
+                        />
+                        <label htmlFor="terms" style={{ fontSize: '0.75rem', color: '#aaa', lineHeight: '1.4', cursor: 'pointer' }}>
+                            Entiendo que ZK-Vault no tiene mi contraseña. Si pierdo mi acceso y mi Kit de Emergencia, <strong>perderé mis datos para siempre.</strong>
+                        </label>
                     </div>
                     
                     <button type="submit" disabled={isLoading} className={isLoading ? 'loading' : ''}>
@@ -122,31 +148,41 @@ Generado el: ${new Date().toLocaleString()}
                 </div>
             </div>
 
+            {/* MODAL DE VERIFICACIÓN DE FRASE SEMILLA */}
             {seedPhrase && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.92)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backdropFilter: 'blur(10px)' }}>
-                    <div style={{ background: '#111', border: '1px solid #10b981', padding: '3rem', borderRadius: '12px', maxWidth: '600px', width: '90%', textAlign: 'center', boxShadow: '0 0 40px rgba(16, 185, 129, 0.2)' }}>
-                        <ShieldCheck size={56} color="#10b981" style={{ marginBottom: '1rem' }}/>
-                        <h2 style={{ color: '#10b981', marginBottom: '1rem' }}>BÓVEDA FORJADA CON ÉXITO</h2>
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.96)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backdropFilter: 'blur(10px)' }}>
+                    <div style={{ background: '#111', border: '1px solid #10b981', padding: '2.5rem', borderRadius: '12px', maxWidth: '600px', width: '95%', textAlign: 'center' }}>
+                        <ShieldCheck size={48} color="#10b981" style={{ marginBottom: '1rem' }}/>
+                        <h2 style={{ color: '#10b981', marginBottom: '1rem', fontSize: '1.4rem' }}>KIT DE EMERGENCIA GENERADO</h2>
                         
-                        <p style={{ color: '#aaa', fontSize: '0.95rem', lineHeight: '1.5', marginBottom: '1.5rem' }}>
-                            Tu "Llave Invisible" ha sido creada. Debido a la arquitectura Zero-Knowledge, si olvidas tu contraseña, esta frase de 24 palabras es <strong>la única forma en el universo</strong> de recuperar tus datos.
+                        <p style={{ color: '#aaa', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                            Anota estas 24 palabras en papel. No tomes capturas ni las guardes en la nube.
                         </p>
 
-                        <div style={{ background: '#000', padding: '1.5rem', borderRadius: '8px', border: '1px dashed #10b981', color: '#10b981', fontFamily: 'monospace', fontSize: '1.1rem', lineHeight: '1.8', wordSpacing: '8px', marginBottom: '2rem' }}>
+                        <div style={{ background: '#000', padding: '1.2rem', borderRadius: '8px', border: '1px dashed #10b981', color: '#10b981', fontFamily: 'monospace', fontSize: '1rem', lineHeight: '1.8', wordSpacing: '8px', marginBottom: '2rem' }}>
                             {seedPhrase}
                         </div>
 
+                        {/* TEST DE SEGURIDAD: OBLIGAR AL USUARIO A VALIDAR UNA PALABRA */}
+                        <div style={{ marginBottom: '2rem', borderTop: '1px solid #222', paddingTop: '1.5rem' }}>
+                            <p style={{ color: '#f59e0b', fontSize: '0.85rem', marginBottom: '0.8rem' }}>
+                                <strong>PRUEBA DE CUSTODIA:</strong> Escribe la palabra número <strong>#{confirmWords.index}</strong> de tu lista:
+                            </p>
+                            <input 
+                                type="text" 
+                                placeholder="Escribe aquí..."
+                                value={confirmWords.val} 
+                                onChange={(e) => setConfirmWords({...confirmWords, val: e.target.value})}
+                                style={{ background: '#000', border: '1px solid #333', color: '#fff', textAlign: 'center', padding: '0.7rem', width: '180px', borderRadius: '4px', outline: 'none' }}
+                            />
+                        </div>
+
                         <button 
-                            onClick={handleDownloadAndProceed} 
-                            style={{ width: '100%', padding: '1.2rem', background: '#10b981', color: 'black', border: 'none', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem', transition: 'background 0.2s' }}
-                            onMouseOver={(e) => e.target.style.background = '#059669'}
-                            onMouseOut={(e) => e.target.style.background = '#10b981'}
+                            onClick={handleFinalCheckAndProceed} 
+                            style={{ width: '100%', padding: '1rem', background: '#10b981', color: 'black', border: 'none', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 'bold' }}
                         >
-                            <Download size={20} /> Descargar Kit de Recuperación y Entrar
+                            <Download size={18} /> Validar, Descargar y Entrar
                         </button>
-                        <p style={{ color: '#666', fontSize: '0.8rem', marginTop: '1rem' }}>
-                            Guarda el archivo descargado en un USB o imprímelo. No lo subas a la nube.
-                        </p>
                     </div>
                 </div>
             )}

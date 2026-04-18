@@ -206,6 +206,92 @@ const Vault = () => {
         return () => window.removeEventListener('session_expired', handleSessionExpired);
     }, [isUnlocked]);
 
+    useEffect(() => {
+    if (!isUnlocked) return;
+
+    let timeoutId;
+
+    const resetTimer = () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        // Bloqueo tras 10 minutos de inactividad (600,000 ms)
+        timeoutId = setTimeout(() => {
+            lockVault("Sesión bloqueada por inactividad");
+        }, 600000); 
+    };
+
+    const lockVault = (reason) => {
+        setMasterKey('');
+        setIsUnlocked(false);
+        showToast(reason, 'info');
+    };
+
+    // Escuchar movimientos del mouse, teclado o clics
+    window.addEventListener('mousemove', resetTimer);
+    window.addEventListener('keypress', resetTimer);
+    window.addEventListener('click', resetTimer);
+    
+    // Bloqueo inmediato si la pestaña se oculta (opcional, muy seguro)
+    const handleVisibilityChange = () => {
+        if (document.visibilityState === 'hidden') {
+            // Podríamos dar un margen de 1 minuto antes de bloquear
+            resetTimer(); 
+        }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    resetTimer(); // Iniciar contador al desbloquear
+
+    return () => {
+        clearTimeout(timeoutId);
+        window.removeEventListener('mousemove', resetTimer);
+        window.removeEventListener('keypress', resetTimer);
+        window.removeEventListener('click', resetTimer);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+}, [isUnlocked]);
+
+useEffect(() => {
+    if (!isUnlocked) return;
+
+    let timeoutId;
+
+    const lockVault = (reason) => {
+        setMasterKey('');
+        setIsUnlocked(false);
+        showToast(reason, 'info');
+    };
+
+    const resetTimer = () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        // Bloqueo tras 15 minutos de inactividad
+        timeoutId = setTimeout(() => {
+            lockVault("Sesión cerrada por inactividad");
+        }, 900000); 
+    };
+
+    // Eventos que reinician el contador de inactividad
+    const events = ['mousemove', 'keypress', 'click', 'scroll', 'touchstart'];
+    events.forEach(event => window.addEventListener(event, resetTimer));
+    
+    // Bloqueo de seguridad si la pestaña se oculta por más de 1 minuto
+    const handleVisibility = () => {
+        if (document.visibilityState === 'hidden') {
+            timeoutId = setTimeout(() => lockVault("Bloqueo de seguridad (Pestaña oculta)"), 60000);
+        } else {
+            resetTimer();
+        }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    resetTimer();
+
+    return () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        events.forEach(event => window.removeEventListener(event, resetTimer));
+        document.removeEventListener('visibilitychange', handleVisibility);
+    };
+}, [isUnlocked]);
+
     // GESTIÓN AVANZADA DE CARPETAS (Zero Knowledge)
     const prefsItem = processedItems.find(i => i.itemType === 'system_prefs');
     const customFolders = prefsItem?.payload?.folders || [];
