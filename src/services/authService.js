@@ -1,34 +1,67 @@
 import api from './api';
-import { hashPassword } from './cryptoService'; // Importamos el generador de hash
+// Actualizamos las importaciones para incluir el generador de Salt
+import { hashPassword, generateRandomSalt } from './cryptoService'; 
 
 export const authService = {
+    //  Pedir el Salt al servidor
+    getSalt: async (email) => {
+        const response = await api.get(`/auth/salt/${email}`);
+        return response.data.salt;
+    },
+
     login: async (email, password, twoFactorCode = null) => {
-        const hashedKey = await hashPassword(password);
-        const response = await api.post('/auth/login', { email, authHash: hashedKey, twoFactorCode });
-        // Guardamos el email en memoria local (no es un dato sensible)
-        localStorage.setItem('vault_user_email', email); 
+        // Descargar el Salt único de este usuario
+        const userSalt = await authService.getSalt(email);
+        
+        // Procesar la contraseña 600,000 veces usando ese Salt
+        const hashedKey = await hashPassword(password, userSalt);
+        
+        // Intentar entrar
+        const response = await api.post('/auth/login', { 
+            email: email, 
+            authHash: hashedKey,
+            twoFactorCode: twoFactorCode 
+        });
+
+        // Guardamos el Salt en memoria para poder descifrar la bóveda
+        localStorage.setItem('vault_user_email', email);
+        localStorage.setItem('vault_user_salt', userSalt); 
+
         return response.data;
     },
 
     register: async (userData) => {
-        const hashedKey = await hashPassword(userData.password);
-        const response = await api.post('/auth/register', { ...userData, authHash: hashedKey });
+        // Al registrar, NOSOTROS creamos un Salt súper seguro
+        const newSalt = generateRandomSalt();
+        
+        // Procesamos la contraseña 600,000 veces
+        const hashedKey = await hashPassword(userData.password, newSalt);
+        
+        // Enviamos el Salt a Java para que lo guarde para siempre
+        const response = await api.post('/auth/register', { 
+            ...userData, 
+            authHash: hashedKey,
+            salt: newSalt 
+        });
+
+        // Guardamos en memoria local
         localStorage.setItem('vault_user_email', userData.email);
+        localStorage.setItem('vault_user_salt', newSalt);
+
         return response.data;
     },
 
     logout: async () => {
         await api.post('/auth/logout'); 
-        localStorage.removeItem('vault_user_email'); // Limpiamos al salir
+        localStorage.removeItem('vault_user_email');
+        localStorage.removeItem('vault_user_salt'); // Limpiamos al salir
     },
 
-    // Pide la imagen del QR al backend
     setup2FA: async () => {
         const response = await api.get('/auth/2fa/setup');
-        return response.data; // Devuelve { qrCode: "data:image/png..." }
+        return response.data;
     },
 
-    // Envía los 6 dígitos para validar
     enable2FA: async (code) => {
         const response = await api.post('/auth/2fa/enable', { code: code });
         return response.data;
@@ -36,6 +69,6 @@ export const authService = {
 
     get2FAStatus: async () => {
         const response = await api.get('/auth/2fa/status');
-        return response.data.isEnabled; // Devuelve true o false
+        return response.data.isEnabled;
     }
 };

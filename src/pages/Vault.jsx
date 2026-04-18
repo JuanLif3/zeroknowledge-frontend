@@ -49,6 +49,7 @@ const Vault = () => {
     const [is2FAEnabled, setIs2FAEnabled] = useState(false);
 
     const [userEmail] = useState(localStorage.getItem('vault_user_email') || '');
+    const [userSalt] = useState(localStorage.getItem('vault_user_salt') || '');
     const [showReauthModal, setShowReauthModal] = useState(false);
     const [reauthPassword, setReauthPassword] = useState('');
 
@@ -161,8 +162,8 @@ const Vault = () => {
             // Desciframos todas las credenciales en paralelo de forma asíncrona
             const decrypted = await Promise.all(items.map(async (item) => {
                 try {
-                    const decTitle = await decryptData(item.encryptedTitle, masterKey, userEmail);
-                    const decPayloadStr = await decryptData(item.encryptedPayload, masterKey, userEmail);
+                    const decTitle = await decryptData(item.encryptedTitle, masterKey, userSalt);
+                    const decPayloadStr = await decryptData(item.encryptedPayload, masterKey, userSalt);
                     
                     if (decTitle === "/// ACCESO DENEGADO ///" || decPayloadStr === "/// ACCESO DENEGADO ///") {
                         return { ...item, decTitle: 'CORRUPTO / LLAVE INVÁLIDA', payload: { error: true, folder: '' } };
@@ -197,8 +198,8 @@ const Vault = () => {
 
     const saveSystemPrefs = async (foldersArray) => {
         const payload = JSON.stringify({ folders: foldersArray });
-        const encTitle = encryptData('SYSTEM_PREFS', masterKey, userEmail);
-        const encPayload = encryptData(payload, masterKey, userEmail);
+        const encTitle = encryptData('SYSTEM_PREFS', masterKey, userSalt);
+        const encPayload = encryptData(payload, masterKey, userSalt);
         if (prefsItem) {
             await vaultService.updateVaultItem(prefsItem.id, encTitle, 'system_prefs', encPayload, false);
         } else {
@@ -222,8 +223,8 @@ const Vault = () => {
         // Quitar la carpeta de los items existentes
         const itemsToUpdate = processedItems.filter(i => i.itemType !== 'system_prefs' && i.payload.folder === folderName);
         await Promise.all(itemsToUpdate.map(item => {
-            const encTitle = encryptData(item.decTitle, masterKey, userEmail);
-            const encPayload = encryptData(JSON.stringify({ ...item.payload, folder: '' }), masterKey, userEmail);
+            const encTitle = encryptData(item.decTitle, masterKey, userSalt);
+            const encPayload = encryptData(JSON.stringify({ ...item.payload, folder: '' }), masterKey, userSalt);
             return vaultService.updateVaultItem(item.id, encTitle, item.itemType, encPayload, item.honeytoken);
         }));
         fetchVault(); showToast('Carpeta eliminada', 'info');
@@ -241,8 +242,8 @@ const Vault = () => {
 
         const itemsToUpdate = processedItems.filter(i => i.itemType !== 'system_prefs' && i.payload.folder === oldName);
         await Promise.all(itemsToUpdate.map(item => {
-            const encTitle = encryptData(item.decTitle, masterKey, userEmail);
-            const encPayload = encryptData(JSON.stringify({ ...item.payload, folder: newName }), masterKey, userEmail);
+            const encTitle = encryptData(item.decTitle, masterKey, userSalt);
+            const encPayload = encryptData(JSON.stringify({ ...item.payload, folder: newName }), masterKey, userSalt);
             return vaultService.updateVaultItem(item.id, encTitle, item.itemType, encPayload, item.honeytoken);
         }));
 
@@ -271,8 +272,8 @@ const Vault = () => {
         const jsonString = JSON.stringify(payloadObj);
         
         // 👇 ¡AQUÍ ESTÁ EL CAMBIO VITAL! Faltaba el "await" 👇
-        const encTitle = await encryptData(formData.title, masterKey, userEmail);
-        const encPayload = await encryptData(jsonString, masterKey, userEmail);
+        const encTitle = await encryptData(formData.title, masterKey, userSalt);
+        const encPayload = await encryptData(jsonString, masterKey, userSalt);
 
         try {
             if (formData.id) {
@@ -342,8 +343,8 @@ const Vault = () => {
     };
 
     const toggleFavoriteFast = async (item) => {
-        const encTitle = encryptData(item.decTitle, masterKey, userEmail);
-        const encPayload = encryptData(JSON.stringify({ ...item.payload, isFavorite: !item.payload.isFavorite }), masterKey, userEmail);
+        const encTitle = encryptData(item.decTitle, masterKey, userSalt);
+        const encPayload = encryptData(JSON.stringify({ ...item.payload, isFavorite: !item.payload.isFavorite }), masterKey, userSalt);
         try {
             await vaultService.updateVaultItem(item.id, encTitle, item.itemType, encPayload, item.honeytoken);
             fetchVault(); showToast(!item.payload.isFavorite ? 'Agregado a Favoritos' : 'Removido', 'success');
@@ -972,7 +973,7 @@ const Vault = () => {
                     <form className="modal-box" onSubmit={async (e) => {
                         e.preventDefault();
                         try {
-                            const res = await authService.login(userEmail, reauthPassword);
+                            const res = await authService.login(userSalt, reauthPassword);
                             if (res.requires2FA) {
                                 showToast("Por seguridad 2FA, debes iniciar sesión desde cero.", "info");
                                 handleLogout();
