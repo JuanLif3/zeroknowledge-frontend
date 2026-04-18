@@ -1,60 +1,61 @@
 import api from './api';
-// Actualizamos las importaciones para incluir el generador de Salt
-import { hashPassword, generateRandomSalt } from './cryptoService'; 
+import { hashPassword, generateRandomSalt, generateMasterKey, generateSeedPhrase, wrapMasterKey } from './cryptoService'; 
 
 export const authService = {
-    //  Pedir el Salt al servidor
     getSalt: async (email) => {
         const response = await api.get(`/auth/salt/${email}`);
         return response.data.salt;
     },
 
     login: async (email, password, twoFactorCode = null) => {
-        // Descargar el Salt único de este usuario
         const userSalt = await authService.getSalt(email);
-        
-        // Procesar la contraseña 600,000 veces usando ese Salt
         const hashedKey = await hashPassword(password, userSalt);
         
-        // Intentar entrar
         const response = await api.post('/auth/login', { 
             email: email, 
             authHash: hashedKey,
             twoFactorCode: twoFactorCode 
         });
 
-        // Guardamos el Salt en memoria para poder descifrar la bóveda
         localStorage.setItem('vault_user_email', email);
         localStorage.setItem('vault_user_salt', userSalt); 
+        if (response.data.encryptedMasterKey) {
+            localStorage.setItem('vault_encrypted_dek', response.data.encryptedMasterKey);
+        }
 
         return response.data;
     },
 
     register: async (userData) => {
-        // Al registrar, NOSOTROS creamos un Salt súper seguro
         const newSalt = generateRandomSalt();
-        
-        // Procesamos la contraseña 600,000 veces
         const hashedKey = await hashPassword(userData.password, newSalt);
         
-        // Enviamos el Salt a Java para que lo guarde para siempre
+        const dek = generateMasterKey();      
+        const seed = generateSeedPhrase();    
+
+        const encryptedMasterKey = await wrapMasterKey(dek, userData.password, newSalt);
+        const recoveryMasterKey = await wrapMasterKey(dek, seed, newSalt);
+
         const response = await api.post('/auth/register', { 
             ...userData, 
             authHash: hashedKey,
-            salt: newSalt 
+            salt: newSalt,
+            encryptedMasterKey: encryptedMasterKey,
+            recoveryMasterKey: recoveryMasterKey
         });
 
-        // Guardamos en memoria local
         localStorage.setItem('vault_user_email', userData.email);
         localStorage.setItem('vault_user_salt', newSalt);
+        localStorage.setItem('vault_encrypted_dek', encryptedMasterKey);
 
-        return response.data;
+        return { ...response.data, seedPhrase: seed };
     },
 
     logout: async () => {
         await api.post('/auth/logout'); 
         localStorage.removeItem('vault_user_email');
-        localStorage.removeItem('vault_user_salt'); // Limpiamos al salir
+        localStorage.removeItem('vault_user_salt');
+        localStorage.removeItem('vault_encrypted_dek');
     },
 
     setup2FA: async () => {

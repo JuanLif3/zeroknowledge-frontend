@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { vaultService } from '../services/vaultService';
 import { secretService } from '../services/secretService';
 import { authService } from '../services/authService';
-import { initCrypto, encryptData, decryptData } from '../services/cryptoService';
+import { initCrypto, encryptData, decryptData, unwrapMasterKey } from '../services/cryptoService';
 import PasswordGenerator from '../components/PasswordGenerator';
 import { Database, KeySquare, ShieldCheck, Link2, Radar, LogOut, PlusSquare, ShieldAlert, Lock, Unlock, CreditCard, StickyNote, Key, AlertTriangle, CheckCircle, XOctagon, Copy, Search, Star, Folder, Edit2, Trash2, Globe, Check, X, FolderPlus, FolderEdit, Save, Menu, Download } from 'lucide-react';
 
@@ -56,9 +56,7 @@ const Vault = () => {
 
     useEffect(() => { initCrypto(); fetchVault(); }, []);
 
-    // ==========================================
     // SINCRONIZACIÓN DE ESTADO DE SEGURIDAD
-    // ==========================================
     useEffect(() => {
         // Apenas la bóveda se desbloquee, preguntamos al servidor el estado real
         if (isUnlocked) {
@@ -68,9 +66,7 @@ const Vault = () => {
         }
     }, [isUnlocked]); // Se dispara cada vez que entras a la bóveda
 
-    // ==========================================
     // SONAR DEL RADAR (BÚSQUEDA EN TIEMPO REAL)
-    // ==========================================
     useEffect(() => {
         // Solo encendemos el radar si la bóveda está abierta
         if (!isUnlocked) return; 
@@ -134,7 +130,27 @@ const Vault = () => {
         } catch (error) { if (error.response?.status === 403) navigate('/login'); }
     };
 
-    const handleUnlock = (e) => { e.preventDefault(); setIsUnlocked(true); showToast('Bóveda Desencriptada Exitosamente', 'success'); };
+    const handleUnlock = async (e) => {
+        e.preventDefault();
+        
+        // Buscamos la caja fuerte que Java nos mandó en el Login
+        const encryptedDek = localStorage.getItem('vault_encrypted_dek');
+        
+        // Intentamos abrir la caja con la Contraseña que el usuario acaba de escribir
+        // ¡OJO! Si el usuario olvidó la contraseña, aquí Mismo podría pegar sus 24 palabras y se abriría igual.
+        const dek = await unwrapMasterKey(encryptedDek, masterKey, userSalt); // masterKey aquí es el input del form
+
+        if (!dek) {
+            showToast("Contraseña incorrecta. Acceso denegado.", "error");
+            return;
+        }
+
+        // Si se abrió, la variable masterKey del estado ahora guardará la Llave Invisible Pura
+        setMasterKey(dek);
+        setIsUnlocked(true);
+        showToast('Bóveda Desencriptada Exitosamente', 'success');
+    };
+
     const handleLogout = async () => {
         try {
             // 1. Matamos la cookie en el servidor
@@ -163,8 +179,8 @@ const Vault = () => {
             // Desciframos todas las credenciales en paralelo de forma asíncrona
             const decrypted = await Promise.all(items.map(async (item) => {
                 try {
-                    const decTitle = await decryptData(item.encryptedTitle, masterKey, userSalt);
-                    const decPayloadStr = await decryptData(item.encryptedPayload, masterKey, userSalt);
+                    const decTitle = await decryptData(item.encryptedTitle, masterKey);
+                    const decPayloadStr = await decryptData(item.encryptedPayload, masterKey);
                     
                     if (decTitle === "/// ACCESO DENEGADO ///" || decPayloadStr === "/// ACCESO DENEGADO ///") {
                         return { ...item, decTitle: 'CORRUPTO / LLAVE INVÁLIDA', payload: { error: true, folder: '' } };
@@ -199,8 +215,8 @@ const Vault = () => {
 
     const saveSystemPrefs = async (foldersArray) => {
         const payload = JSON.stringify({ folders: foldersArray });
-        const encTitle = encryptData('SYSTEM_PREFS', masterKey, userSalt);
-        const encPayload = encryptData(payload, masterKey, userSalt);
+        const encTitle = encryptData('SYSTEM_PREFS', masterKey);
+        const encPayload = encryptData(payload, masterKey);
         if (prefsItem) {
             await vaultService.updateVaultItem(prefsItem.id, encTitle, 'system_prefs', encPayload, false);
         } else {
@@ -224,8 +240,8 @@ const Vault = () => {
         // Quitar la carpeta de los items existentes
         const itemsToUpdate = processedItems.filter(i => i.itemType !== 'system_prefs' && i.payload.folder === folderName);
         await Promise.all(itemsToUpdate.map(item => {
-            const encTitle = encryptData(item.decTitle, masterKey, userSalt);
-            const encPayload = encryptData(JSON.stringify({ ...item.payload, folder: '' }), masterKey, userSalt);
+            const encTitle = encryptData(item.decTitle, masterKey);
+            const encPayload = encryptData(JSON.stringify({ ...item.payload, folder: '' }), masterKey);
             return vaultService.updateVaultItem(item.id, encTitle, item.itemType, encPayload, item.honeytoken);
         }));
         fetchVault(); showToast('Carpeta eliminada', 'info');
@@ -243,8 +259,8 @@ const Vault = () => {
 
         const itemsToUpdate = processedItems.filter(i => i.itemType !== 'system_prefs' && i.payload.folder === oldName);
         await Promise.all(itemsToUpdate.map(item => {
-            const encTitle = encryptData(item.decTitle, masterKey, userSalt);
-            const encPayload = encryptData(JSON.stringify({ ...item.payload, folder: newName }), masterKey, userSalt);
+            const encTitle = encryptData(item.decTitle, masterKey);
+            const encPayload = encryptData(JSON.stringify({ ...item.payload, folder: newName }), masterKey);
             return vaultService.updateVaultItem(item.id, encTitle, item.itemType, encPayload, item.honeytoken);
         }));
 
@@ -273,8 +289,8 @@ const Vault = () => {
         const jsonString = JSON.stringify(payloadObj);
         
         // 👇 ¡AQUÍ ESTÁ EL CAMBIO VITAL! Faltaba el "await" 👇
-        const encTitle = await encryptData(formData.title, masterKey, userSalt);
-        const encPayload = await encryptData(jsonString, masterKey, userSalt);
+        const encTitle = await encryptData(formData.title, masterKey);
+        const encPayload = await encryptData(jsonString, masterKey);
 
         try {
             if (formData.id) {
@@ -325,8 +341,8 @@ const Vault = () => {
             const decryptedData = [];
             // CORRECCIÓN: Usamos 'items' en lugar de 'vaultItems'
             for (const item of items) { 
-                const title = await decryptData(item.encryptedTitle, masterKey, userSalt);
-                const payload = await decryptData(item.encryptedPayload, masterKey, userSalt);
+                const title = await decryptData(item.encryptedTitle, masterKey);
+                const payload = await decryptData(item.encryptedPayload, masterKey);
                 decryptedData.push({
                     type: item.itemType,
                     title: title,
@@ -370,8 +386,8 @@ const Vault = () => {
     };
 
     const toggleFavoriteFast = async (item) => {
-        const encTitle = encryptData(item.decTitle, masterKey, userSalt);
-        const encPayload = encryptData(JSON.stringify({ ...item.payload, isFavorite: !item.payload.isFavorite }), masterKey, userSalt);
+        const encTitle = encryptData(item.decTitle, masterKey);
+        const encPayload = encryptData(JSON.stringify({ ...item.payload, isFavorite: !item.payload.isFavorite }), masterKey);
         try {
             await vaultService.updateVaultItem(item.id, encTitle, item.itemType, encPayload, item.honeytoken);
             fetchVault(); showToast(!item.payload.isFavorite ? 'Agregado a Favoritos' : 'Removido', 'success');
@@ -1000,7 +1016,7 @@ const Vault = () => {
                     <form className="modal-box" onSubmit={async (e) => {
                         e.preventDefault();
                         try {
-                            const res = await authService.login(userSalt, reauthPassword);
+                            const res = await authService.login(reauthPassword);
                             if (res.requires2FA) {
                                 showToast("Por seguridad 2FA, debes iniciar sesión desde cero.", "info");
                                 handleLogout();
