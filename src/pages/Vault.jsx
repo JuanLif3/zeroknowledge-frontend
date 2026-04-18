@@ -5,7 +5,7 @@ import { secretService } from '../services/secretService';
 import { authService } from '../services/authService';
 import { initCrypto, encryptData, decryptData } from '../services/cryptoService';
 import PasswordGenerator from '../components/PasswordGenerator';
-import { Database, KeySquare, ShieldCheck, Link2, Radar, LogOut, PlusSquare, ShieldAlert, Lock, Unlock, CreditCard, StickyNote, Key, AlertTriangle, CheckCircle, XOctagon, Copy, Search, Star, Folder, Edit2, Trash2, Globe, Check, X, FolderPlus, FolderEdit, Save, Menu } from 'lucide-react';
+import { Database, KeySquare, ShieldCheck, Link2, Radar, LogOut, PlusSquare, ShieldAlert, Lock, Unlock, CreditCard, StickyNote, Key, AlertTriangle, CheckCircle, XOctagon, Copy, Search, Star, Folder, Edit2, Trash2, Globe, Check, X, FolderPlus, FolderEdit, Save, Menu, Download } from 'lucide-react';
 
 const Vault = () => {
     const navigate = useNavigate();
@@ -30,6 +30,7 @@ const Vault = () => {
     const [showFolderManager, setShowFolderManager] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
     const [editingFolder, setEditingFolder] = useState(null);
+    const [showExportModal, setShowExportModal] = useState(false);
 
     const initialFormState = {
         id: null, title: '', itemType: 'login', isHoneytoken: false,
@@ -287,38 +288,64 @@ const Vault = () => {
         } catch (error) { showToast('Error de Cifrado o Guardado', 'error'); }
     };
 
-    // ==========================================
-    // SOBERANÍA DE DATOS: EXPORTAR BÓVEDA
-    // ==========================================
-    const handleExportVault = () => {
-        if (processedItems.length === 0) {
-            showToast("Tu bóveda está vacía, no hay nada que exportar.", "info");
+    // Abre el recuadro de opciones
+    const triggerExport = () => {
+        setShowExportModal(true);
+    };
+
+    // Exportación Segura (Backup)
+    const handleExportEncrypted = () => {
+        // CORRECCIÓN: Usamos 'items' en lugar de 'vaultItems'
+        const encryptedData = items.map(item => ({
+            id: item.id,
+            type: item.itemType,
+            title: item.encryptedTitle,
+            payload: item.encryptedPayload,
+            createdAt: item.createdAt
+        }));
+
+        const blob = new Blob([JSON.stringify(encryptedData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `ZKVault_Encrypted_Backup_${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        
+        setShowExportModal(false);
+        // showToast("Backup Cifrado descargado con éxito.", "success"); 
+    };
+
+    // Exportación Peligrosa (Para migrar a otra app)
+    const handleExportPlainText = async () => {
+        if (!window.confirm("⚠️ ADVERTENCIA ROJA: Estás a punto de descargar todas tus contraseñas legibles y sin protección. Cualquier persona o virus con acceso a este archivo podrá robar tu identidad. ¿Estás absolutamente seguro?")) {
             return;
         }
 
-        // 1. Limpiamos los datos para no exportar cosas innecesarias del backend
-        const exportData = processedItems.map(item => ({
-            titulo: item.decTitle,
-            tipo: item.itemType,
-            datos: item.payload,
-            creado_el: item.createdAt
-        }));
+        try {
+            const decryptedData = [];
+            // CORRECCIÓN: Usamos 'items' en lugar de 'vaultItems'
+            for (const item of items) { 
+                const title = await decryptData(item.encryptedTitle, masterKey, userSalt);
+                const payload = await decryptData(item.encryptedPayload, masterKey, userSalt);
+                decryptedData.push({
+                    type: item.itemType,
+                    title: title,
+                    data: JSON.parse(payload)
+                });
+            }
 
-        // 2. Convertimos a texto JSON formateado y creamos un Blob (Archivo virtual en RAM)
-        const dataStr = JSON.stringify(exportData, null, 2);
-        const blob = new Blob([dataStr], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-
-        // 3. Forzamos la descarga en el navegador
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `ZK_Vault_Export_${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-
-        showToast("Bóveda exportada de forma segura", "success");
+            const blob = new Blob([JSON.stringify(decryptedData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `ZKVault_Exposed_DANGER_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            setShowExportModal(false);
+        } catch (err) {
+            console.error("Error exportando:", err);
+            alert("Hubo un error al exportar los datos. Verifica tu conexión.");
+        }
     };
 
     const handleEdit = (item) => {
@@ -1000,6 +1027,53 @@ const Vault = () => {
                 </div>
             )}
 
+            {/* ========================================== */}
+            {/* MODAL DE EXPORTACIÓN (SOBERANÍA DE DATOS) */}
+            {/* ========================================== */}
+            {showExportModal && (
+                <div className="modal-overlay" style={{ zIndex: 10000, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(5px)' }}>
+                    <div style={{ background: '#111', border: '1px solid #333', padding: '2.5rem', borderRadius: '12px', maxWidth: '500px', width: '90%', textAlign: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+                        <h2 style={{ color: '#fff', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}><Download size={24}/> Exportar Bóveda</h2>
+                        <p style={{ color: '#aaa', marginBottom: '2rem', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                            Elige el formato de seguridad para descargar tus datos. Eres dueño de tu información, pero recuerda ser precavido.
+                        </p>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {/* BOTÓN 1: BACKUP SEGURO */}
+                            <button 
+                                onClick={handleExportEncrypted} 
+                                style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid #10b981', padding: '1.5rem', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
+                                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(16, 185, 129, 0.15)'}
+                                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(16, 185, 129, 0.05)'}
+                            >
+                                <h4 style={{ color: '#10b981', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}><ShieldCheck size={20}/> Backup Cifrado (Recomendado)</h4>
+                                <p style={{ color: '#888', fontSize: '0.85rem', margin: 0, lineHeight: '1.4' }}>Descarga los datos en formato crudo AES-GCM. Si te roban este archivo, no podrán leerlo sin tu contraseña maestra. Ideal para guardar en la nube.</p>
+                            </button>
+
+                            {/* BOTÓN 2: TEXTO PLANO PELIGROSO */}
+                            <button 
+                                onClick={handleExportPlainText} 
+                                style={{ background: 'rgba(239, 68, 68, 0.05)', border: '1px dashed #ef4444', padding: '1.5rem', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
+                                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'}
+                                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'}
+                            >
+                                <h4 style={{ color: '#ef4444', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem' }}><AlertTriangle size={20}/> Texto Plano (Peligroso)</h4>
+                                <p style={{ color: '#888', fontSize: '0.85rem', margin: 0, lineHeight: '1.4' }}>Descarga tus credenciales desencriptadas y totalmente legibles. Usa esta opción ÚNICAMENTE si vas a migrar a otro gestor de contraseñas (ej. 1Password).</p>
+                            </button>
+                        </div>
+
+                        <button 
+                            onClick={() => setShowExportModal(false)} 
+                            style={{ marginTop: '2rem', background: 'transparent', color: '#888', border: 'none', cursor: 'pointer', padding: '0.5rem 1rem', fontSize: '1rem' }}
+                            onMouseOver={(e) => e.target.style.color = '#fff'}
+                            onMouseOut={(e) => e.target.style.color = '#888'}
+                        >
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {!isUnlocked ? (
                 /* PANTALLA DE DESBLOQUEO */
                 <div className="unlock-overlay">
@@ -1070,7 +1144,7 @@ const Vault = () => {
                                         className={activeTab === 'radar' ? 'active icon-btn' : 'icon-btn'} onClick={() => handleNavClick('radar')}>
                                             <Radar size={18} /> Radar Honeytoken
                                         </button>
-                                        <button onClick={handleExportVault} className="icon-btn-center" style={{marginTop: '1rem', background: '#10b981', color: 'black', border: 'none'}}>
+                                        <button onClick={triggerExport} className="icon-btn-center" style={{marginTop: '1rem', background: '#10b981', color: 'black', border: 'none'}}>
     Exportar Bóveda Descifrada
 </button>
 

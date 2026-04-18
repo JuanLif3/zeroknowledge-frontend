@@ -47,12 +47,22 @@ export const decryptData = async (base64Text, password, saltString) => {
     }
 };
 
-// * MEJORADO: Ahora el Hash para iniciar sesión también usa las 600,000 iteraciones
+// * Ahora el Hash para iniciar sesión también usa las 600,000 iteraciones
 export const hashPassword = async (password, saltString) => {
-    const key = await deriveKey(password, saltString);
-    const exportedKey = await window.crypto.subtle.exportKey("raw", key);
-    const hashArray = Array.from(new Uint8Array(exportedKey));
+    // Importamos la contraseña básica
+    const keyMaterial = await window.crypto.subtle.importKey(
+        "raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveBits"] 
+    );
+
+    // Extraemos el Hash puro (deriveBits) en lugar de una Llave (deriveKey)
+    const hashBuffer = await window.crypto.subtle.deriveBits(
+        { name: "PBKDF2", salt: enc.encode(saltString), iterations: 600000, hash: "SHA-256" },
+        keyMaterial, 
+        256 // Queremos 256 bits
+    );
+
+    // Convertimos los bits a formato Hexadecimal
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 };
-
 export const initCrypto = () => { console.log("Web Crypto API Inicializada - Nivel Militar 600k"); };
