@@ -4,27 +4,22 @@ import { hashPassword } from './cryptoService'; // Importamos el generador de ha
 export const authService = {
     login: async (email, password, twoFactorCode = null) => {
         const hashedKey = await hashPassword(password);
-        const response = await api.post('/auth/login', { 
-            email: email, 
-            authHash: hashedKey,
-            twoFactorCode: twoFactorCode // Añadimos esto
-        });
+        const response = await api.post('/auth/login', { email, authHash: hashedKey, twoFactorCode });
+        // Guardamos el email en memoria local (no es un dato sensible)
+        localStorage.setItem('vault_user_email', email); 
         return response.data;
     },
 
     register: async (userData) => {
-        const hashedKey = await hashPassword(userData.password); // Hasheamos antes de enviar
-        const response = await api.post('/auth/register', { 
-            firstname: userData.firstname,
-            lastname: userData.lastname,
-            email: userData.email, 
-            authHash: hashedKey 
-        });
+        const hashedKey = await hashPassword(userData.password);
+        const response = await api.post('/auth/register', { ...userData, authHash: hashedKey });
+        localStorage.setItem('vault_user_email', userData.email);
         return response.data;
     },
 
     logout: async () => {
         await api.post('/auth/logout'); 
+        localStorage.removeItem('vault_user_email'); // Limpiamos al salir
     },
 
     // Pide la imagen del QR al backend

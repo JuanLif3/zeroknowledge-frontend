@@ -48,6 +48,10 @@ const Vault = () => {
     const [twoFactorCode, setTwoFactorCode] = useState(''); // Guardará lo que escriba el usuario
     const [is2FAEnabled, setIs2FAEnabled] = useState(false);
 
+    const [userEmail] = useState(localStorage.getItem('vault_user_email') || '');
+    const [showReauthModal, setShowReauthModal] = useState(false);
+    const [reauthPassword, setReauthPassword] = useState('');
+
     useEffect(() => { initCrypto(); fetchVault(); }, []);
 
     // ==========================================
@@ -157,8 +161,8 @@ const Vault = () => {
             // Desciframos todas las credenciales en paralelo de forma asíncrona
             const decrypted = await Promise.all(items.map(async (item) => {
                 try {
-                    const decTitle = await decryptData(item.encryptedTitle, masterKey);
-                    const decPayloadStr = await decryptData(item.encryptedPayload, masterKey);
+                    const decTitle = await decryptData(item.encryptedTitle, masterKey, userEmail);
+                    const decPayloadStr = await decryptData(item.encryptedPayload, masterKey, userEmail);
                     
                     if (decTitle === "/// ACCESO DENEGADO ///" || decPayloadStr === "/// ACCESO DENEGADO ///") {
                         return { ...item, decTitle: 'CORRUPTO / LLAVE INVÁLIDA', payload: { error: true, folder: '' } };
@@ -176,6 +180,14 @@ const Vault = () => {
         decryptVault();
     }, [items, masterKey, isUnlocked]);
 
+    useEffect(() => {
+        const handleSessionExpired = () => {
+            if (isUnlocked) setShowReauthModal(true);
+        };
+        window.addEventListener('session_expired', handleSessionExpired);
+        return () => window.removeEventListener('session_expired', handleSessionExpired);
+    }, [isUnlocked]);
+
     // GESTIÓN AVANZADA DE CARPETAS (Zero Knowledge)
     const prefsItem = processedItems.find(i => i.itemType === 'system_prefs');
     const customFolders = prefsItem?.payload?.folders || [];
@@ -185,8 +197,8 @@ const Vault = () => {
 
     const saveSystemPrefs = async (foldersArray) => {
         const payload = JSON.stringify({ folders: foldersArray });
-        const encTitle = encryptData('SYSTEM_PREFS', masterKey);
-        const encPayload = encryptData(payload, masterKey);
+        const encTitle = encryptData('SYSTEM_PREFS', masterKey, userEmail);
+        const encPayload = encryptData(payload, masterKey, userEmail);
         if (prefsItem) {
             await vaultService.updateVaultItem(prefsItem.id, encTitle, 'system_prefs', encPayload, false);
         } else {
@@ -210,8 +222,8 @@ const Vault = () => {
         // Quitar la carpeta de los items existentes
         const itemsToUpdate = processedItems.filter(i => i.itemType !== 'system_prefs' && i.payload.folder === folderName);
         await Promise.all(itemsToUpdate.map(item => {
-            const encTitle = encryptData(item.decTitle, masterKey);
-            const encPayload = encryptData(JSON.stringify({ ...item.payload, folder: '' }), masterKey);
+            const encTitle = encryptData(item.decTitle, masterKey, userEmail);
+            const encPayload = encryptData(JSON.stringify({ ...item.payload, folder: '' }), masterKey, userEmail);
             return vaultService.updateVaultItem(item.id, encTitle, item.itemType, encPayload, item.honeytoken);
         }));
         fetchVault(); showToast('Carpeta eliminada', 'info');
@@ -229,8 +241,8 @@ const Vault = () => {
 
         const itemsToUpdate = processedItems.filter(i => i.itemType !== 'system_prefs' && i.payload.folder === oldName);
         await Promise.all(itemsToUpdate.map(item => {
-            const encTitle = encryptData(item.decTitle, masterKey);
-            const encPayload = encryptData(JSON.stringify({ ...item.payload, folder: newName }), masterKey);
+            const encTitle = encryptData(item.decTitle, masterKey, userEmail);
+            const encPayload = encryptData(JSON.stringify({ ...item.payload, folder: newName }), masterKey, userEmail);
             return vaultService.updateVaultItem(item.id, encTitle, item.itemType, encPayload, item.honeytoken);
         }));
 
@@ -259,8 +271,8 @@ const Vault = () => {
         const jsonString = JSON.stringify(payloadObj);
         
         // 👇 ¡AQUÍ ESTÁ EL CAMBIO VITAL! Faltaba el "await" 👇
-        const encTitle = await encryptData(formData.title, masterKey);
-        const encPayload = await encryptData(jsonString, masterKey);
+        const encTitle = await encryptData(formData.title, masterKey, userEmail);
+        const encPayload = await encryptData(jsonString, masterKey, userEmail);
 
         try {
             if (formData.id) {
@@ -330,8 +342,8 @@ const Vault = () => {
     };
 
     const toggleFavoriteFast = async (item) => {
-        const encTitle = encryptData(item.decTitle, masterKey);
-        const encPayload = encryptData(JSON.stringify({ ...item.payload, isFavorite: !item.payload.isFavorite }), masterKey);
+        const encTitle = encryptData(item.decTitle, masterKey, userEmail);
+        const encPayload = encryptData(JSON.stringify({ ...item.payload, isFavorite: !item.payload.isFavorite }), masterKey, userEmail);
         try {
             await vaultService.updateVaultItem(item.id, encTitle, item.itemType, encPayload, item.honeytoken);
             fetchVault(); showToast(!item.payload.isFavorite ? 'Agregado a Favoritos' : 'Removido', 'success');
@@ -951,6 +963,39 @@ const Vault = () => {
                             <button className="btn-danger" onClick={executeDelete}>Confirmar Purga</button>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* MODAL DE RESCATE DE SESIÓN (401) */}
+            {showReauthModal && (
+                <div className="modal-overlay" style={{ zIndex: 10000 }}>
+                    <form className="modal-box" onSubmit={async (e) => {
+                        e.preventDefault();
+                        try {
+                            const res = await authService.login(userEmail, reauthPassword);
+                            if (res.requires2FA) {
+                                showToast("Por seguridad 2FA, debes iniciar sesión desde cero.", "info");
+                                handleLogout();
+                            } else {
+                                setShowReauthModal(false);
+                                setReauthPassword('');
+                                showToast("Sesión restaurada con éxito. Haz clic en Guardar nuevamente.", "success");
+                            }
+                        } catch (err) {
+                            showToast("Contraseña incorrecta", "error");
+                        }
+                    }}>
+                        <ShieldAlert size={48} color="#f59e0b" style={{marginBottom: '1rem'}}/>
+                        <h3 style={{ color: '#f59e0b' }}>Tu Sesión ha Expirado</h3>
+                        <p style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '1rem' }}>
+                            Tranquilo, tu formulario no se ha borrado. Ingresa tu Contraseña Maestra para restaurar la conexión con el servidor.
+                        </p>
+                        <input type="password" required placeholder="Contraseña Maestra" value={reauthPassword} onChange={(e) => setReauthPassword(e.target.value)} style={{ width: '100%', padding: '1rem', background: '#000', color: '#fff', border: '1px solid #333', marginBottom: '1rem' }} autoFocus/>
+                        <div className="modal-actions">
+                            <button type="button" className="btn-cancel" onClick={handleLogout}>Salir</button>
+                            <button type="submit" style={{ background: '#f59e0b', color: 'black', border: 'none', padding: '0.8rem 1.5rem', borderRadius: '4px', fontWeight: 'bold' }}>Restaurar Sesión</button>
+                        </div>
+                    </form>
                 </div>
             )}
 
