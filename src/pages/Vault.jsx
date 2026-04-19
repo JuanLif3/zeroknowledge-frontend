@@ -819,7 +819,11 @@ const Vault = () => {
                                     const compromised = attacksOnThis > 0;
                                     
                                     // LA MAGIA: Construimos la URL que atrapa al hacker usando el UUID de la base de datos
-                                    const trapUrl = `http://localhost:8080/api/v1/trap/${item.trapToken}`;
+                                    const API_URL = import.meta.env.VITE_API_URL 
+                                        ? import.meta.env.VITE_API_URL.replace('/api/v1', '') 
+                                        : 'http://localhost:8080';
+
+                                    const trapUrl = `${API_URL}/api/v1/trap/${item.trapToken}`;
 
                                     return (
                                         <div key={item.id} className="sensor-card" style={compromised ? {borderColor: '#ef4444', background: 'rgba(239, 68, 68, 0.02)'} : {}}>
