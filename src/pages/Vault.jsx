@@ -136,9 +136,7 @@ const Vault = () => {
         // Buscamos la caja fuerte que Java nos mandó en el Login
         const encryptedDek = localStorage.getItem('vault_encrypted_dek');
         
-        // Intentamos abrir la caja con la Contraseña que el usuario acaba de escribir
-        // ¡OJO! Si el usuario olvidó la contraseña, aquí Mismo podría pegar sus 24 palabras y se abriría igual.
-        const dek = await unwrapMasterKey(encryptedDek, masterKey, userSalt); // masterKey aquí es el input del form
+        const dek = await unwrapMasterKey(encryptedDek, masterKey, userSalt); 
 
         if (!dek) {
             showToast("Contraseña incorrecta. Acceso denegado.", "error");
@@ -206,91 +204,48 @@ const Vault = () => {
         return () => window.removeEventListener('session_expired', handleSessionExpired);
     }, [isUnlocked]);
 
+    // SISTEMA DE AUTO-LOCK POR INACTIVIDAD
     useEffect(() => {
-    if (!isUnlocked) return;
+        if (!isUnlocked) return;
 
-    let timeoutId;
+        let timeoutId;
 
-    const resetTimer = () => {
-        if (timeoutId) clearTimeout(timeoutId);
-        // Bloqueo tras 10 minutos de inactividad (600,000 ms)
-        timeoutId = setTimeout(() => {
-            lockVault("Sesión bloqueada por inactividad");
-        }, 600000); 
-    };
+        const lockVault = (reason) => {
+            setMasterKey(''); // Borramos la DEK de la memoria RAM
+            setIsUnlocked(false);
+            showToast(reason, 'info'); 
+        };
 
-    const lockVault = (reason) => {
-        setMasterKey('');
-        setIsUnlocked(false);
-        showToast(reason, 'info');
-    };
+        const resetTimer = () => {
+            if (timeoutId) clearTimeout(timeoutId);
+            // 15 minutos de inactividad (900,000 ms)
+            timeoutId = setTimeout(() => {
+                lockVault("Sesión bloqueada por inactividad");
+            }, 900000); 
+        };
 
-    // Escuchar movimientos del mouse, teclado o clics
-    window.addEventListener('mousemove', resetTimer);
-    window.addEventListener('keypress', resetTimer);
-    window.addEventListener('click', resetTimer);
-    
-    // Bloqueo inmediato si la pestaña se oculta (opcional, muy seguro)
-    const handleVisibilityChange = () => {
-        if (document.visibilityState === 'hidden') {
-            // Podríamos dar un margen de 1 minuto antes de bloquear
-            resetTimer(); 
-        }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+        // Eventos que reinician el cronómetro
+        const events = ['mousemove', 'keypress', 'click', 'scroll', 'touchstart'];
+        events.forEach(event => window.addEventListener(event, resetTimer));
+        
+        // Bloqueo si la pestaña se oculta por más de 1 minuto
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                timeoutId = setTimeout(() => lockVault("Bloqueo de seguridad: Pestaña oculta"), 60000);
+            } else {
+                resetTimer();
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    resetTimer(); // Iniciar contador al desbloquear
+        resetTimer();
 
-    return () => {
-        clearTimeout(timeoutId);
-        window.removeEventListener('mousemove', resetTimer);
-        window.removeEventListener('keypress', resetTimer);
-        window.removeEventListener('click', resetTimer);
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-}, [isUnlocked]);
-
-useEffect(() => {
-    if (!isUnlocked) return;
-
-    let timeoutId;
-
-    const lockVault = (reason) => {
-        setMasterKey('');
-        setIsUnlocked(false);
-        showToast(reason, 'info');
-    };
-
-    const resetTimer = () => {
-        if (timeoutId) clearTimeout(timeoutId);
-        // Bloqueo tras 15 minutos de inactividad
-        timeoutId = setTimeout(() => {
-            lockVault("Sesión cerrada por inactividad");
-        }, 900000); 
-    };
-
-    // Eventos que reinician el contador de inactividad
-    const events = ['mousemove', 'keypress', 'click', 'scroll', 'touchstart'];
-    events.forEach(event => window.addEventListener(event, resetTimer));
-    
-    // Bloqueo de seguridad si la pestaña se oculta por más de 1 minuto
-    const handleVisibility = () => {
-        if (document.visibilityState === 'hidden') {
-            timeoutId = setTimeout(() => lockVault("Bloqueo de seguridad (Pestaña oculta)"), 60000);
-        } else {
-            resetTimer();
-        }
-    };
-    document.addEventListener('visibilitychange', handleVisibility);
-
-    resetTimer();
-
-    return () => {
-        if (timeoutId) clearTimeout(timeoutId);
-        events.forEach(event => window.removeEventListener(event, resetTimer));
-        document.removeEventListener('visibilitychange', handleVisibility);
-    };
-}, [isUnlocked]);
+        return () => {
+            if (timeoutId) clearTimeout(timeoutId);
+            events.forEach(event => window.removeEventListener(event, resetTimer));
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [isUnlocked]);
 
     // GESTIÓN AVANZADA DE CARPETAS (Zero Knowledge)
     const prefsItem = processedItems.find(i => i.itemType === 'system_prefs');
