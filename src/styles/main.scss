@@ -1,6 +1,7 @@
 @use 'variables' as *;
 @use 'auth';
 @use 'vault';
+@use 'landing';
 
 // 2. LUEGO LA FUENTE DE GOOGLE
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400&display=swap');
@@ -8,6 +9,8 @@
 // 3. FINALMENTE LOS ESTILOS GLOBALES
 body {
   background-color: $bg-color;
+  overflow-x: hidden;
+  width: 100%;
   background-image: radial-gradient(#111 1px, transparent 1px);
   background-size: 20px 20px;
   color: $text-main;
@@ -24,4 +27,17 @@ button, input, select, textarea {
 
 .mono-font { 
   font-family: 'JetBrains Mono', monospace; 
+}
+
+// Ejemplo para main.scss si no estás usando una librería de utilidades de CSS
+.bg-dark { background-color: $surface; } // o el hex que uses para el fondo
+.text-neon-green { color: #27c93f; } // Tu verde terminal
+.bg-neon-green { background-color: #27c93f; }
+
+.glow-text {
+  text-shadow: 0 0 10px rgba(39, 201, 63, 0.5);
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }

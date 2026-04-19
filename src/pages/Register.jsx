@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../services/authService';
-import { ShieldCheck, AlertTriangle, Info, Download, Copy } from 'lucide-react'; 
+import { 
+    ShieldCheck, 
+    AlertTriangle, 
+    Eye, 
+    EyeOff, 
+    CheckCircle2, 
+    Circle,
+    Download
+} from 'lucide-react';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -14,6 +22,18 @@ const Register = () => {
     const [confirmWords, setConfirmWords] = useState({ index: 0, val: '' });
     const [hasCheckedTerms, setHasCheckedTerms] = useState(false);
 
+    // ESTADO PARA MOSTRAR/OCULTAR CONTRASEÑA
+    const [showPassword, setShowPassword] = useState(false);
+
+    // VALIDACIÓN DINÁMICA DE REQUISITOS
+    const passReqs = {
+        length: formData.password.length >= 12,
+        lower: /[a-z]/.test(formData.password),
+        upper: /[A-Z]/.test(formData.password),
+        number: /[0-9]/.test(formData.password),
+        symbol: /[^A-Za-z0-9]/.test(formData.password)
+    };
+
     // Al generarse la frase, elegimos un índice al azar para la prueba de seguridad
     useEffect(() => {
         if (seedPhrase) {
@@ -24,10 +44,19 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        // Verificación extra de seguridad en caso de que modifiquen el HTML
         if (!hasCheckedTerms) {
             setError("Debes aceptar la responsabilidad de custodia de tus llaves.");
             return;
         }
+        
+        // No permitimos enviar si la contraseña es débil
+        if (!Object.values(passReqs).every(Boolean)) {
+            setError("La contraseña maestra debe cumplir con todos los requisitos de seguridad.");
+            return;
+        }
+
         setError('');
         setIsLoading(true);
 
@@ -111,34 +140,69 @@ Generado el: ${new Date().toLocaleString()}
                         <input type="email" placeholder="Correo Electrónico" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                     </div>
                     
-                    <div className="form-group" style={{ marginTop: '1rem', marginBottom: '0.5rem' }}>
-                        <input type="password" placeholder="Contraseña Maestra de Acceso" required value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
+                    {/* INPUT DE CONTRASEÑA CON OJO */}
+                    <div className="form-group" style={{ position: 'relative', marginBottom: '1rem' }}>
+                        <input 
+                            type={showPassword ? "text" : "password"} 
+                            placeholder="Contraseña Maestra" 
+                            required 
+                            value={formData.password} 
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                            style={{ paddingRight: '2.5rem', width: '100%' }}
+                        />
+                        <button 
+                            type="button" 
+                            onClick={() => setShowPassword(!showPassword)}
+                            style={{
+                                position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+                                background: 'transparent', border: 'none', color: '#888', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}
+                        >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
                     </div>
 
-                    <div className="password-rules" style={{ background: '#050505', border: '1px dashed #333', padding: '1rem', marginBottom: '1rem', fontSize: '0.75rem', color: '#888', fontFamily: 'monospace' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f59e0b', marginBottom: '0.5rem' }}>
-                            <Info size={14} /> <strong>POLÍTICA ESTRICTA REQUERIDA:</strong>
-                        </div>
-                        <ul style={{ margin: 0, paddingLeft: '1.2rem', lineHeight: '1.6' }}>
-                            <li>Mínimo 12 caracteres</li>
-                            <li>Mayúsculas, minúsculas, números y símbolos</li>
+                    {/* POLÍTICA ESTRICTA DINÁMICA */}
+                    <div style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid #f59e0b', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+                        <h4 style={{ color: '#f59e0b', marginTop: 0, marginBottom: '0.8rem', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                            Política Estricta Requerida:
+                        </h4>
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem', color: '#ccc' }}>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: passReqs.length ? '#10b981' : '#ccc', textDecoration: passReqs.length ? 'line-through' : 'none', transition: 'all 0.2s' }}>
+                                {passReqs.length ? <CheckCircle2 size={14} color="#10b981" /> : <Circle size={14} />} Mínimo 12 caracteres
+                            </li>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: passReqs.lower ? '#10b981' : '#ccc', textDecoration: passReqs.lower ? 'line-through' : 'none', transition: 'all 0.2s' }}>
+                                {passReqs.lower ? <CheckCircle2 size={14} color="#10b981" /> : <Circle size={14} />} Al menos una minúscula
+                            </li>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: passReqs.upper ? '#10b981' : '#ccc', textDecoration: passReqs.upper ? 'line-through' : 'none', transition: 'all 0.2s' }}>
+                                {passReqs.upper ? <CheckCircle2 size={14} color="#10b981" /> : <Circle size={14} />} Al menos una mayúscula
+                            </li>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: passReqs.number ? '#10b981' : '#ccc', textDecoration: passReqs.number ? 'line-through' : 'none', transition: 'all 0.2s' }}>
+                                {passReqs.number ? <CheckCircle2 size={14} color="#10b981" /> : <Circle size={14} />} Al menos un número
+                            </li>
+                            <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: passReqs.symbol ? '#10b981' : '#ccc', textDecoration: passReqs.symbol ? 'line-through' : 'none', transition: 'all 0.2s' }}>
+                                {passReqs.symbol ? <CheckCircle2 size={14} color="#10b981" /> : <Circle size={14} />} Al menos un símbolo (!@#$%^&*)
+                            </li>
                         </ul>
                     </div>
 
-                    <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.7rem', alignItems: 'flex-start' }}>
+                    {/* CHECKBOX DE RESPONSABILIDAD CENTRADO */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', marginTop: '1rem', marginBottom: '2rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.05)', borderRadius: '8px', border: '1px dashed #ef4444' }}>
                         <input 
                             type="checkbox" 
-                            id="terms" 
+                            id="risk-terms" 
+                            required 
                             checked={hasCheckedTerms} 
                             onChange={(e) => setHasCheckedTerms(e.target.checked)}
-                            style={{ marginTop: '3px' }}
+                            style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#ef4444', flexShrink: 0 }}
                         />
-                        <label htmlFor="terms" style={{ fontSize: '0.75rem', color: '#aaa', lineHeight: '1.4', cursor: 'pointer' }}>
-                            Entiendo que ZK-Vault no tiene mi contraseña. Si pierdo mi acceso y mi Kit de Emergencia, <strong>perderé mis datos para siempre.</strong>
+                        <label htmlFor="risk-terms" style={{ color: '#ffb3b3', fontSize: '0.85rem', lineHeight: '1.5', cursor: 'pointer', textAlign: 'left', margin: 0 }}>
+                            Entiendo que ZK-Vault <strong>NO</strong> tiene mi contraseña. Si pierdo mi acceso y mi Kit de Emergencia, <strong style={{ color: '#ef4444', textDecoration: 'underline' }}>perderé mis datos para siempre</strong>.
                         </label>
                     </div>
                     
-                    <button type="submit" disabled={isLoading} className={isLoading ? 'loading' : ''}>
+                    <button type="submit" disabled={isLoading || !Object.values(passReqs).every(Boolean)} className={isLoading ? 'loading' : ''}>
                         {isLoading ? 'Forjando Llaves Invisibles...' : 'Establecer Bóveda'}
                     </button>
                 </form>

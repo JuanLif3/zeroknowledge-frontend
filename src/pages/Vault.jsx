@@ -210,6 +210,7 @@ const Vault = () => {
 
         const lockVault = (reason) => {
             setMasterKey(''); // Borramos la DEK de la memoria RAM
+            setProcessedItems([]); // Purgar los datos legibles de la memoria
             setIsUnlocked(false);
             showToast(reason, 'info'); 
         };
@@ -253,15 +254,16 @@ const Vault = () => {
         .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
     const saveSystemPrefs = async (foldersArray) => {
-        const payload = JSON.stringify({ folders: foldersArray });
-        const encTitle = encryptData('SYSTEM_PREFS', masterKey);
-        const encPayload = encryptData(payload, masterKey);
-        if (prefsItem) {
-            await vaultService.updateVaultItem(prefsItem.id, encTitle, 'system_prefs', encPayload, false);
-        } else {
-            await vaultService.saveVaultItem(encTitle, 'system_prefs', encPayload, false);
-        }
-    };
+    const payload = JSON.stringify({ folders: foldersArray });
+    const encTitle = await encryptData('SYSTEM_PREFS', masterKey); 
+    const encPayload = await encryptData(payload, masterKey); 
+    
+    if (prefsItem) {
+        await vaultService.updateVaultItem(prefsItem.id, encTitle, 'system_prefs', encPayload, false);
+    } else {
+        await vaultService.saveVaultItem(encTitle, 'system_prefs', encPayload, false);
+    }
+};
 
     const handleCreateFolder = async (e) => {
         e.preventDefault();
@@ -273,39 +275,49 @@ const Vault = () => {
     };
 
     const handleDeleteFolder = async (folderName) => {
-        if (!window.confirm(`¿Eliminar carpeta "${folderName}"? Las credenciales no se borrarán.`)) return;
-        const updatedFolders = customFolders.filter(f => f !== folderName);
-        await saveSystemPrefs(updatedFolders);
-        // Quitar la carpeta de los items existentes
-        const itemsToUpdate = processedItems.filter(i => i.itemType !== 'system_prefs' && i.payload.folder === folderName);
-        await Promise.all(itemsToUpdate.map(item => {
-            const encTitle = encryptData(item.decTitle, masterKey);
-            const encPayload = encryptData(JSON.stringify({ ...item.payload, folder: '' }), masterKey);
-            return vaultService.updateVaultItem(item.id, encTitle, item.itemType, encPayload, item.honeytoken);
-        }));
-        fetchVault(); showToast('Carpeta eliminada', 'info');
-        if (activeSidebarFolder === folderName) setActiveSidebarFolder('all');
-    };
+    if (!window.confirm(`¿Eliminar carpeta "${folderName}"? Las credenciales no se borrarán.`)) return;
+    
+    const updatedFolders = customFolders.filter(f => f !== folderName);
+    await saveSystemPrefs(updatedFolders);
+    
+    // Quitar la carpeta de los items existentes
+    const itemsToUpdate = processedItems.filter(i => i.itemType !== 'system_prefs' && i.payload.folder === folderName);
+    
+    await Promise.all(itemsToUpdate.map(async item => {
+        const encTitle = await encryptData(item.decTitle, masterKey);
+        const encPayload = await encryptData(JSON.stringify({ ...item.payload, folder: '' }), masterKey);
+        return vaultService.updateVaultItem(item.id, encTitle, item.itemType, encPayload, item.honeytoken);
+    }));
+    
+    fetchVault(); 
+    showToast('Carpeta eliminada', 'info');
+    if (activeSidebarFolder === folderName) setActiveSidebarFolder('all');
+};
 
     const handleRenameFolderSubmit = async (e) => {
-        e.preventDefault();
-        const oldName = editingFolder.oldName; const newName = editingFolder.newName.trim();
-        if (!newName || newName === oldName) return setEditingFolder(null);
+    e.preventDefault();
+    const oldName = editingFolder.oldName; 
+    const newName = editingFolder.newName.trim();
+    if (!newName || newName === oldName) return setEditingFolder(null);
 
-        let updatedFolders = customFolders.map(f => f === oldName ? newName : f);
-        if (!customFolders.includes(oldName)) updatedFolders.push(newName);
-        await saveSystemPrefs(updatedFolders);
+    let updatedFolders = customFolders.map(f => f === oldName ? newName : f);
+    if (!customFolders.includes(oldName)) updatedFolders.push(newName);
+    await saveSystemPrefs(updatedFolders);
 
-        const itemsToUpdate = processedItems.filter(i => i.itemType !== 'system_prefs' && i.payload.folder === oldName);
-        await Promise.all(itemsToUpdate.map(item => {
-            const encTitle = encryptData(item.decTitle, masterKey);
-            const encPayload = encryptData(JSON.stringify({ ...item.payload, folder: newName }), masterKey);
-            return vaultService.updateVaultItem(item.id, encTitle, item.itemType, encPayload, item.honeytoken);
-        }));
+    const itemsToUpdate = processedItems.filter(i => i.itemType !== 'system_prefs' && i.payload.folder === oldName);
+    
+    // 👇 CRÍTICO: "async item =>" y los "await" para encryptData
+    await Promise.all(itemsToUpdate.map(async item => {
+        const encTitle = await encryptData(item.decTitle, masterKey);
+        const encPayload = await encryptData(JSON.stringify({ ...item.payload, folder: newName }), masterKey);
+        return vaultService.updateVaultItem(item.id, encTitle, item.itemType, encPayload, item.honeytoken);
+    }));
 
-        setEditingFolder(null); fetchVault(); showToast('Carpeta renombrada', 'success');
-        if (activeSidebarFolder === oldName) setActiveSidebarFolder(newName);
-    };
+    setEditingFolder(null); 
+    fetchVault(); 
+    showToast('Carpeta renombrada', 'success');
+    if (activeSidebarFolder === oldName) setActiveSidebarFolder(newName);
+};
 
     // FILTRADO DE ALMACÉN
     let filteredItems = processedItems.filter(item => {
@@ -380,8 +392,11 @@ const Vault = () => {
             const decryptedData = [];
             // CORRECCIÓN: Usamos 'items' en lugar de 'vaultItems'
             for (const item of items) { 
+                if (item.itemType === 'system_prefs') continue;
+
                 const title = await decryptData(item.encryptedTitle, masterKey);
                 const payload = await decryptData(item.encryptedPayload, masterKey);
+
                 decryptedData.push({
                     type: item.itemType,
                     title: title,
@@ -425,13 +440,15 @@ const Vault = () => {
     };
 
     const toggleFavoriteFast = async (item) => {
-        const encTitle = encryptData(item.decTitle, masterKey);
-        const encPayload = encryptData(JSON.stringify({ ...item.payload, isFavorite: !item.payload.isFavorite }), masterKey);
-        try {
-            await vaultService.updateVaultItem(item.id, encTitle, item.itemType, encPayload, item.honeytoken);
-            fetchVault(); showToast(!item.payload.isFavorite ? 'Agregado a Favoritos' : 'Removido', 'success');
-        } catch (e) { showToast('Error al actualizar favorito', 'error'); }
-    };
+    const encTitle = await encryptData(item.decTitle, masterKey);
+    const encPayload = await encryptData(JSON.stringify({ ...item.payload, isFavorite: !item.payload.isFavorite }), masterKey);
+    
+    try {
+        await vaultService.updateVaultItem(item.id, encTitle, item.itemType, encPayload, item.honeytoken);
+        fetchVault(); 
+        showToast(!item.payload.isFavorite ? 'Agregado a Favoritos' : 'Removido', 'success');
+    } catch (e) { showToast('Error al actualizar favorito', 'error'); }
+};
 
     // ... Funciones Auditoría/Radar/Send (Se mantienen iguales) ...
     const runAudit = () => {
@@ -823,7 +840,7 @@ const Vault = () => {
                                         ? import.meta.env.VITE_API_URL.replace('/api/v1', '') 
                                         : 'http://localhost:8080';
 
-                                    const trapUrl = `${API_URL}/api/v1/trap/${item.trapToken}`;
+                                    const trapUrl = `${window.location.origin}/api/v1/trap/${item.trapToken}`;
 
                                     return (
                                         <div key={item.id} className="sensor-card" style={compromised ? {borderColor: '#ef4444', background: 'rgba(239, 68, 68, 0.02)'} : {}}>
