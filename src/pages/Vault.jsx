@@ -133,8 +133,7 @@ const Vault = () => {
     const handleUnlock = async (e) => {
         e.preventDefault();
         
-        // Buscamos la caja fuerte que Java nos mandó en el Login
-        const encryptedDek = localStorage.getItem('vault_encrypted_dek');
+        const encryptedDek = sessionStorage.getItem('vault_encrypted_dek');
         
         const dek = await unwrapMasterKey(encryptedDek, masterKey, userSalt); 
 
@@ -143,7 +142,6 @@ const Vault = () => {
             return;
         }
 
-        // Si se abrió, la variable masterKey del estado ahora guardará la Llave Invisible Pura
         setMasterKey(dek);
         setIsUnlocked(true);
         showToast('Bóveda Desencriptada Exitosamente', 'success');

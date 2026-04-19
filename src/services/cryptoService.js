@@ -19,9 +19,10 @@ export const generateMasterKey = () => {
 
 // * Fabrica la Frase Semilla de 24 palabras
 export const generateSeedPhrase = () => {
-    const array = new Uint8Array(24);
+    // garantizando una distribución perfecta entre las 2048 palabras.
+    const array = new Uint16Array(24); 
     window.crypto.getRandomValues(array);
-    return Array.from(array).map(byte => BIP39_ES[byte % BIP39_ES.length]).join(' ');
+    return Array.from(array).map(val => BIP39_ES[val % BIP39_ES.length]).join(' ');
 };
 
 const deriveKey = async (password, saltString) => {

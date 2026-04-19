@@ -20,8 +20,8 @@ export const authService = {
         localStorage.setItem('vault_user_email', email);
         localStorage.setItem('vault_user_salt', userSalt); 
         if (response.data.encryptedMasterKey) {
-            localStorage.setItem('vault_encrypted_dek', response.data.encryptedMasterKey);
-        }
+        sessionStorage.setItem('vault_encrypted_dek', response.data.encryptedMasterKey);
+    }
 
         return response.data;
     },
@@ -46,7 +46,7 @@ export const authService = {
 
         localStorage.setItem('vault_user_email', userData.email);
         localStorage.setItem('vault_user_salt', newSalt);
-        localStorage.setItem('vault_encrypted_dek', encryptedMasterKey);
+        sessionStorage.setItem('vault_encrypted_dek', encryptedMasterKey);
 
         return { ...response.data, seedPhrase: seed };
     },
@@ -55,7 +55,7 @@ export const authService = {
         await api.post('/auth/logout'); 
         localStorage.removeItem('vault_user_email');
         localStorage.removeItem('vault_user_salt');
-        localStorage.removeItem('vault_encrypted_dek');
+        sessionStorage.removeItem('vault_encrypted_dek');
     },
 
     setup2FA: async () => {
