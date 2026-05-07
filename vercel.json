@@ -5,7 +5,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://zeroknowledge-vault-production.up.railway.app;"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://zeroknowledge-vault.onrender.com;"
         },
         {
           "key": "X-Frame-Options",
@@ -29,7 +29,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://zeroknowledge-vault-production.up.railway.app/api/:path*"
+      "destination": "https://zeroknowledge-vault.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",
